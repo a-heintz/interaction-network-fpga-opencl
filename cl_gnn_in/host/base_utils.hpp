@@ -43,14 +43,6 @@ string toString(int &i){
    return ss.str();
 }
 
-vector<float> flatten(const vector<vector<float>> &orig)
-{
-    vector<float> ret;
-    for(const auto &v: orig)
-        ret.insert(ret.end(), v.begin(), v.end());
-    return ret;
-}
-
 vector<vector<float>> readH5_2_vec_2d(vector<vector<float>> vec, const char* str, hid_t model_file){
 	int m = vec.size();
 	int n = vec[0].size();

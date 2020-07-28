@@ -2,19 +2,12 @@
 #include "CL/opencl.h"
 #include "AOCLUtils/aocl_utils.h"
 #include "utility.h"
-#include "error_handling.hpp"
+//#include "error_handling.hpp"
 using namespace aocl_utils;
 using namespace std;
 using namespace std::chrono;
 
 #define NUM_CMD_QUEUES    16
-
-cl_platform_id platform;                        // OpenCL platform
-cl_device_id device;                            // device ID
-cl_context context;                             // context
-cl_command_queue queues[NUM_CMD_QUEUES];        // command queue
-cl_program program;                             // program
-map<string, cl_kernel> kernels;                 // kernels
 
 void createKernel(string kernel_name){
     // error code returned from api calls
@@ -46,29 +39,29 @@ void initializeOpenCLParameters(){
     // We'll just use the first device.
     device = devices[0];
 
+    // Display some device information.
+    // display_device_info(device);
+
     // Create the context.
     context = clCreateContext(NULL, 1, &device, &oclContextCallback, NULL, &err);
-    checkErr(err, __LINE__);
+    checkErr(err, "Failed to create context");
 
-    // Create all of the command queues
-    for (unsigned int i = 0; i < NUM_CMD_QUEUES; i++) {
-        queues[i] = clCreateCommandQueue(context, device, 0, &err);
-        checkErr(err, __LINE__);
-    }
+    // Create the command queue.
+    queue = clCreateCommandQueue(context, device, 0, &err);
+    checkError(err, "Failed to create command queue");
 
     // Create the program.
-    std::string cl_program_name = "gnn";
-    std::string binary_file = getBoardBinaryFile(cl_program_name.c_str(), device);
-
+    std::string binary_file = getBoardBinaryFile("gnn", device);
+    printf("Using AOCX: %s\n", binary_file.c_str());
     program = createProgramFromBinary(context, binary_file.c_str(), &device, 1);
 
     // Build the program that was just created.
     err = clBuildProgram(program, 0, NULL, "", NULL, NULL);
-    checkErr(err, __LINE__);
+    checkErr(err, "Failed to build program");
 
     createKernel("add_bias_helper");
     createKernel("add_bias");
-    createKernel("matMul_helper");
+    //createKernel("matMul_helper");
     createKernel("matMul");
     createKernel("transpose_helper");
     createKernel("transpose");
@@ -78,20 +71,18 @@ void initializeOpenCLParameters(){
     createKernel("aggregate_cat");
 }
 
-void cleanup(){
-    for(int i = 0; i < NUM_CMD_QUEUES; i++){
-        if (queues[i] != 0)
-            clReleaseCommandQueue(queues[i]);
-    }
-
-    for (const auto & kernel : kernels) {
-        if (kernel.second != 0)
-            clReleaseKernel(kernel.second);
-    }
-
-    if (program != 0)
-        clReleaseProgram(program);
-
-    if (context != 0)
-        clReleaseContext(context);
+void cleanup() {
+  for (const auto & kernel : kernels) {
+      if (kernel.second != 0)
+          clReleaseKernel(kernel.second);
+  }
+  if(program) {
+    clReleaseProgram(program);
+  }
+  if(queue) {
+    clReleaseCommandQueue(queue);
+  }
+  if(context) {
+    clReleaseContext(context);
+  }
 }
