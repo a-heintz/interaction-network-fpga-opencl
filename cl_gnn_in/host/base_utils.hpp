@@ -39,7 +39,6 @@ int data_idx_n[100];
 string toString(int &i){
    stringstream ss;
    ss << i;
-
    return ss.str();
 }
 
