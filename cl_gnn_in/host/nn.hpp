@@ -38,43 +38,44 @@ vector<vector<float>> object_model(vector<vector<float>> x){
 	return x;
 }
 
-vector<vector<float>> forward(vector<vector<vector<float>>> obj,
-															vector<vector<vector<float>>> sr,
-															vector<vector<vector<float>>> rr,
-															vector<vector<vector<float>>> ri){
+vector<vector<vector<float>>> forward(vector<vector<vector<float>>> obj,
+																			vector<vector<vector<float>>> sr,
+																			vector<vector<vector<float>>> rr,
+																			vector<vector<vector<float>>> ri){
 	vector<vector<float>> predict;
+	vector<vector<vector<float>>> predicted;
 	int N = data_len;
-	int i = 0;
-	//for(int i = 0; i < N; i++){
-	int obj_h = obj[i][0].size();
-	int sr_h = sr[i][0].size();
-	int ri_w = ri[i].size();
-	vector<vector<float>> obj_t = transpose(obj[i]);
-	vector<vector<float>> sender = matmul(obj_t, sr[i]);
-	vector<vector<float>> receiver = matmul(obj_t, rr[i]);
-	int term_w = obj_h + obj_h + ri_w;
-	int term_h = sr_h;
-	vector<vector<float>> interaction_term = interaction_cat(term_w, term_h, sender, receiver, ri[i]);
-	vector<vector<float>> effect = relational_model(interaction_term);
-	vector<vector<float>> effect_receiver = matmul(rr[i], effect);
-	effect_receiver = transpose( effect_receiver );
-	vector<vector<float>> aggregate = aggregate_cat(obj_t, effect_receiver);
-	vector<vector<float>> inf = object_model(aggregate);
-	predict = transpose(inf);
-	sender = matmul(predict, sr[i]);
-	receiver = matmul(predict, rr[i]);
-	int predict_shape_0 = 3;
-	term_w = predict_shape_0 + predict_shape_0 + ri_w;
-	term_h = sr_h;
-	interaction_term = interaction_cat(term_w, term_h, sender, receiver, ri[i]);
-	predict = relational_model(interaction_term);
-	int m = predict.size();
-	//cout << predict.size() << " " << predict[0].size();
-
+	for(int i = 0; i < N; i++){
+		int obj_h = obj[i][0].size();
+		int sr_h = sr[i][0].size();
+		int ri_w = ri[i].size();
+		vector<vector<float>> obj_t = transpose(obj[i]);
+		vector<vector<float>> sender = matmul(obj_t, sr[i]);
+		vector<vector<float>> receiver = matmul(obj_t, rr[i]);
+		int term_w = obj_h + obj_h + ri_w;
+		int term_h = sr_h;
+		vector<vector<float>> interaction_term = interaction_cat(term_w, term_h, sender, receiver, ri[i]);
+		vector<vector<float>> effect = relational_model(interaction_term);
+		vector<vector<float>> effect_receiver = matmul(rr[i], effect);
+		effect_receiver = transpose( effect_receiver );
+		vector<vector<float>> aggregate = aggregate_cat(obj_t, effect_receiver);
+		vector<vector<float>> inf = object_model(aggregate);
+		predict = transpose(inf);
+		sender = matmul(predict, sr[i]);
+		receiver = matmul(predict, rr[i]);
+		int predict_shape_0 = 3;
+		term_w = predict_shape_0 + predict_shape_0 + ri_w;
+		term_h = sr_h;
+		interaction_term = interaction_cat(term_w, term_h, sender, receiver, ri[i]);
+		predict = relational_model(interaction_term);
+		int m = predict.size();
+		predicted.push_back(predict);
+		//cout << predict.size() << " " << predict[0].size();
+	/*
 	for (int j = 0; j < m; j++) {
 		cout << predict[j][0] << " \n";
 	}
-
-	//}
-	return predict;
+	*/
+	}
+	return predicted;
 }

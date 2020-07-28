@@ -26,7 +26,7 @@ int main(int argc, char **argv)
 	load_model();
 	// forward operation
 	auto start = high_resolution_clock::now();
-	vector<vector<float>> predict = forward(obj, sr, rr, ri);
+	vector<vector<vector<float>>> predicted = forward(obj, sr, rr, ri);
 	auto stop = high_resolution_clock::now();
 	auto duration = duration_cast<microseconds>(stop - start);
 	cout << "Time taken by function: "
