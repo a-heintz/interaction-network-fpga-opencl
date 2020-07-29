@@ -32,7 +32,7 @@ vector<float> OM_BIAS_0(200);
 vector<float> OM_BIAS_2(200);
 vector<float> OM_BIAS_4(3);
 
-int data_len = 10;
+int data_len = 100;
 int data_idx_m[100];
 int data_idx_n[100];
 

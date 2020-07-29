@@ -114,6 +114,10 @@ vector<vector<float>> sigmoid(vector<vector<float>> inp){
       x[i][j] = out[global_idx(i, j, n)];
     }
   }
+
+  clReleaseMemObject(inp_buf);
+  clReleaseMemObject(out_buf);
+
   return x;
 }
 
@@ -144,6 +148,9 @@ vector<vector<float>> relu(vector<vector<float>> inp){
       x[i][j] = out[global_idx(i, j, n)];
     }
   }
+  clReleaseMemObject(inp_buf);
+  clReleaseMemObject(out_buf);
+
   return x;
 }
 
@@ -176,6 +183,11 @@ vector<vector<float>> add_bias(vector<vector<float>> inp, vector<float> bias){
       x[i][j] = out[global_idx(i, j, n)];
     }
   }
+
+  clReleaseMemObject(inp_buf);
+  clReleaseMemObject(out_buf);
+  clReleaseMemObject(bias_buf);
+
   return x;
 }
 
@@ -220,6 +232,12 @@ vector<vector<float>> interaction_cat(int term_w, int term_h, vector<vector<floa
       x[i][j] = out[global_idx(i, j, term_h)];
     }
   }
+
+  clReleaseMemObject(sender_buf);
+  clReleaseMemObject(receiver_buf);
+  clReleaseMemObject(ri_buf);
+  clReleaseMemObject(out_buf);
+
   return x;
 }
 
@@ -261,9 +279,59 @@ vector<vector<float>> aggregate_cat(vector<vector<float>> obj_t, vector<vector<f
       x[i][j] = out[global_idx(i, j, term_h)];
     }
   }
+
+  clReleaseMemObject(obj_t_buf);
+  clReleaseMemObject(effect_receiver_buf);
+  clReleaseMemObject(out_buf);
+
   return x;
 }
+/*
+vector<vector<float>> matmul(vector<vector<float>> a, vector<vector<float>> b){
+  // get kernel to execute
+  cl_kernel kernel = kernels["matrixMul"];
+  cl_int status;
 
+  const ushort m = a.size();
+	const ushort n = a[0].size();
+	const ushort p = b[0].size();
+
+  int a_size = (int) m * n;
+  int b_size = (int) n * p;
+  int out_size = (int) m * p;
+
+  // create buffers
+  cl_mem a_buf = create_input_buffer_2d(a, a_size, status);
+  cl_mem b_buf = create_input_buffer_2d(b, b_size, status);
+  cl_mem out_buf = create_output_buffer(out_size, status);
+  // Set the kernel argument (argument 0)
+
+  status  =  clSetKernelArg(kernel, 0, sizeof(cl_mem), &a_buf);
+  status |=  clSetKernelArg(kernel, 1, sizeof(cl_mem), &b_buf);
+  status |=  clSetKernelArg(kernel, 2, sizeof(cl_mem), &out_buf);
+  status |=  clSetKernelArg(kernel, 3, sizeof(ushort), &m);
+  status |=  clSetKernelArg(kernel, 4, sizeof(ushort), &p);
+  checkError(status, "Setting kernel arguments");
+  // execute kernel
+  const size_t global[2] = {m, p};
+  const size_t worksize = m * p;
+  status = clEnqueueNDRangeKernel(queue, kernel, 2, NULL, global, NULL, 0, NULL, NULL);
+  checkError(status, "Enqueuing kernel");
+  // Wait for command queue to complete pending events
+  status = clFinish(queue);
+  checkError(status, "Waiting for queue to finish");
+  // read buffer to host
+  float out[out_size];
+  read_out_buffer(out_buf, out, out_size, status);
+  vector<vector<float>> c(m, vector<float>(p));
+  for (int i = 0; i < m; i++) {
+    for (int j = 0; j < p; j++) {
+      c[i][j] = out[global_idx(i, j, p)];
+    }
+  }
+  return c;
+}
+*/
 vector<vector<float>> matmul(vector<vector<float>> a, vector<vector<float>> b){
   // get kernel to execute
   cl_kernel kernel = kernels["matMul"];
@@ -307,5 +375,9 @@ vector<vector<float>> matmul(vector<vector<float>> a, vector<vector<float>> b){
       c[i][j] = out[global_idx(i, j, p)];
     }
   }
+  clReleaseMemObject(a_buf);
+  clReleaseMemObject(b_buf);
+  clReleaseMemObject(out_buf);
+
   return c;
 }

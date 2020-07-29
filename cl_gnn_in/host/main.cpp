@@ -3,15 +3,13 @@
 using namespace std;
 using namespace std::chrono;
 
+// 14703417 microseconds on emulator
+
 int main(int argc, char **argv)
 {
 	Options options(argc, argv);
 
 	initializeOpenCLParameters();
-	// create variables for all dimensions
-	// calculate length of all arrays
-	// create buffers for everything...
-	// allocate space for everything in host
 	// load data
 	const hid_t data_file = H5Fopen(DATA_FILE, H5F_ACC_RDONLY, H5P_DEFAULT);
 	string sec = "obj_";

@@ -63,6 +63,7 @@ void initializeOpenCLParameters(){
     createKernel("add_bias");
     //createKernel("matMul_helper");
     createKernel("matMul");
+    createKernel("matrixMul");
     createKernel("transpose_helper");
     createKernel("transpose");
     createKernel("relu");
