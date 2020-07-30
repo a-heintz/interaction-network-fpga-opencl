@@ -3,8 +3,9 @@
 using namespace std;
 using namespace std::chrono;
 
-// 14703417 microseconds on emulator
-
+// 14703417 microsec on emulator --  all 2d
+// 687033 microsec on emulator -- all 1d
+// 1269062 microsec on fpga -- all 2d
 int main(int argc, char **argv)
 {
 	Options options(argc, argv);

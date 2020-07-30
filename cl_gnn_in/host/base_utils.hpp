@@ -16,6 +16,33 @@ using namespace std::chrono;
 #define MODEL_FILE    "../data/model_weights.hdf5"
 #define DATA_FILE     "../data/test.hdf5"
 
+int obj_w;
+int obj_h;
+int sr_w;
+int sr_h;
+int ri_w;
+int ri_h;
+int rr_w;
+int rr_h;
+int obj_t_w;
+int obj_t_h;
+int sender_w;
+int sender_h;
+int receiver_w;
+int receiver_h;
+int term_w;
+int term_h;
+int effect_w;
+int effect_h;
+int effect_receiver_w;
+int effect_receiver_h;
+int aggregate_w;
+int aggregate_h;
+int pred_w;
+int pred_h;
+int out_w;
+int out_h;
+
 vector<vector<float>> RM_WEIGHT_0(7, vector<float>(250));
 vector<vector<float>> RM_WEIGHT_2(250, vector<float>(250));
 vector<vector<float>> RM_WEIGHT_4(250, vector<float>(250));
@@ -32,7 +59,7 @@ vector<float> OM_BIAS_0(200);
 vector<float> OM_BIAS_2(200);
 vector<float> OM_BIAS_4(3);
 
-int data_len = 100;
+int data_len = 10;
 int data_idx_m[100];
 int data_idx_n[100];
 

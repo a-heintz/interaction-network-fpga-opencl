@@ -7,11 +7,11 @@
 #include <vector>
 #include <chrono>
 #include "hdf5.h"
-#include "shared_utils.hpp"
+
 using namespace std;
 using namespace std::chrono;
 
-/*
+
 vector<vector<float>> matmul(const vector<vector<float>> a, const vector<vector<float>> b) {
 	int n = a.size();
 	int m = a[0].size();
@@ -123,4 +123,3 @@ vector<vector<float>> add_bias(vector<vector<float>> inp, vector<float> bias){
 	}
 	return x;
 }
-*/
