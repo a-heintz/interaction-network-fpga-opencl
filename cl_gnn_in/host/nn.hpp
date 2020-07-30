@@ -40,11 +40,7 @@ void flatten1dvec2array(vector<float> inp, float *inp_arr){
 }
 }
 
-void linear(float* x_arr,
-														 float* out_bias_arr,
-														 vector<vector<float>> weight,
-														 vector<float> bias,
-														 int x_w, int x_h, int weight_h){
+void linear(float* x_arr, float* out_bias_arr, vector<vector<float>> weight, vector<float> bias, int x_w, int x_h, int weight_h){
 	int m = x_w;
 	int n = x_h;
 	int p = weight_h;
@@ -87,7 +83,7 @@ void object_model(float* x_arr, float* x_out, int x_w, int x_h){
 	// transpose
 	float x_arr_t[x_w*x_h];
 	transpose(x_arr, x_arr_t, x_w, x_h);
-	vector<vector<float>> x = array2_2dvec(x_arr_t, x_h, x_w);
+	//vector<vector<float>> x = array2_2dvec(x_arr_t, x_h, x_w);
 	// fc layers
 	int w0 = OM_WEIGHT_0[0].size();
 	int w2 = OM_WEIGHT_2[0].size();
@@ -101,7 +97,6 @@ void object_model(float* x_arr, float* x_out, int x_w, int x_h){
 	linear(x1_out, x2, OM_WEIGHT_2, OM_BIAS_2, x_h, w0, w2);
 	relu( x2, x2_out , x_h, w2);
 	linear(x2_out, x_out, OM_WEIGHT_4, OM_BIAS_4, x_h, w2, w4);
-
 }
 
 vector<vector<vector<float>>> forward(vector<vector<vector<float>>> obj,

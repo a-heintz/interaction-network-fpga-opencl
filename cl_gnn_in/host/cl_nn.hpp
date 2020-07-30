@@ -107,7 +107,6 @@ void sigmoid(float* inp, float* out, int m_, int n_){
 
   clReleaseMemObject(inp_buf);
   clReleaseMemObject(out_buf);
-
 }
 
 void relu(float* inp, float* out, int m_, int n_){
@@ -160,7 +159,6 @@ void add_bias(float* inp, float* bias, float* out, int m_, int n_){
   clReleaseMemObject(inp_buf);
   clReleaseMemObject(out_buf);
   clReleaseMemObject(bias_buf);
-
 }
 
 void interaction_cat(int term_w,
