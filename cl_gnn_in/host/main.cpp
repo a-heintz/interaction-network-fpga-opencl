@@ -6,6 +6,8 @@ using namespace std::chrono;
 // 14703417 microsec on emulator --  all 2d
 // 687033 microsec on emulator -- all 1d
 // 1269062 microsec on fpga -- all 2d
+// 684228 microsec on emulator -- 1d, 1d matmul
+// 684228 microsec on emulator -- 1d, 2d matmul
 int main(int argc, char **argv)
 {
 	Options options(argc, argv);

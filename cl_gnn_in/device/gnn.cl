@@ -13,7 +13,8 @@ __kernel void add_bias(__global float *inp, __global float *bias, __global float
 }
 
 __attribute__((uses_global_work_offset(0)))
-__kernel void matMul(__global const float* a, __global const float* b, __global float* result, const ushort M, const ushort N, const ushort P)
+__kernel void matMul(__global const float* a, __global const float* b, __global float* result,
+  const ushort M, const ushort N, const ushort P)
 {
     int idx = get_global_id(0);
     int k = 0;

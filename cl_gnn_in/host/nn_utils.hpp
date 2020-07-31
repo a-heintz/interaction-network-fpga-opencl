@@ -13,14 +13,14 @@ using namespace std::chrono;
 
 
 vector<vector<float>> matmul(const vector<vector<float>> a, const vector<vector<float>> b) {
-	int n = a.size();
-	int m = a[0].size();
+	int m = a.size();
+	int n = a[0].size();
 	int p = b[0].size();
 	vector<vector<float>> c(n, vector<float>(p));
-	for (int i = 0; i < n; ++i) {
+	for (int i = 0; i < m; ++i) {
 		for (int j = 0; j < p; ++j) {
 			float sum = 0;
-			for (int k = 0; k < m; ++k) {
+			for (int k = 0; k < n; ++k) {
 				sum += a[i][k]*b[k][j];
 			}
 			c[i][j] = sum;
