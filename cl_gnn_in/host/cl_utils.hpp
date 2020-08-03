@@ -61,7 +61,10 @@ void initializeOpenCLParameters(){
 
     createKernel("add_bias");
     createKernel("matMul");
-    //createKernel("matrixMul");
+    createKernel("matrixMul");
+    createKernel("linear");
+    createKernel("linear_relu");
+    createKernel("linear_sigmoid");
     createKernel("transpose");
     createKernel("relu");
     createKernel("sigmoid");

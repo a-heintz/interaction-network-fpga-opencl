@@ -40,17 +40,21 @@ void flatten1dvec2array(vector<float> inp, float *inp_arr){
 }
 }
 
-void linear(float* x_arr, float* out_bias_arr, vector<vector<float>> weight, vector<float> bias, int x_w, int x_h, int weight_h){
+void linear(float* x_arr, float* out_bias_arr, vector<vector<float>> weight, vector<float> bias, int x_w, int x_h, int weight_h, char* activation){
 	int m = x_w;
 	int n = x_h;
 	int p = weight_h;
 	float weight_arr[n*p];
-	float out_arr[m*p];
 	float bias_arr[p];
 	flatten2dvec2array(weight, weight_arr);
 	flatten1dvec2array(bias, bias_arr);
-	matmul(x_arr, weight_arr, out_arr, m, n, p);
-	add_bias(out_arr, bias_arr, out_bias_arr, m, p);
+	if (activation == "relu"){
+		cl_linear_relu(x_arr, weight_arr, bias_arr, out_bias_arr, m, n, p);
+	} else if (activation == "sigmoid"){
+		cl_linear_sigmoid(x_arr, weight_arr, bias_arr, out_bias_arr, m, n, p);
+	} else {
+		cl_linear(x_arr, weight_arr, bias_arr, out_bias_arr, m, n, p);
+	}
 }
 
 void relational_model(float* x_arr, float* x_out, int x_w, int x_h){
@@ -66,37 +70,25 @@ void relational_model(float* x_arr, float* x_out, int x_w, int x_h){
 	float x2[x_h*w2];
 	float x4[x_h*w4];
 	float x6[x_h*w6];
-	float x1_out[x_h*w0];
-	float x2_out[x_h*w2];
-	float x4_out[x_h*w4];
-	linear(x_arr_t, x1, RM_WEIGHT_0, RM_BIAS_0, x_h, x_w, w0);
-	relu( x1 , x1_out, x_h, w0);
-	linear(x1_out, x2, RM_WEIGHT_2, RM_BIAS_2, x_h, w0, w2);
-	relu( x2, x2_out, x_h, w2);
-	linear(x2_out, x4, RM_WEIGHT_4, RM_BIAS_4, x_h, w2, w4);
-	relu( x4, x4_out , x_h, w4);
-	linear(x4_out, x6, RM_WEIGHT_6, RM_BIAS_6, x_h, w4, w6);
-	sigmoid( x6, x_out , x_h, w6);
+	linear(x_arr_t, x1, RM_WEIGHT_0, RM_BIAS_0, x_h, x_w, w0, "relu");
+	linear(x1, x2, RM_WEIGHT_2, RM_BIAS_2, x_h, w0, w2, "relu");
+	linear(x2, x4, RM_WEIGHT_4, RM_BIAS_4, x_h, w2, w4, "relu");
+	linear(x4, x_out, RM_WEIGHT_6, RM_BIAS_6, x_h, w4, w6, "sigmoid");
 }
 
 void object_model(float* x_arr, float* x_out, int x_w, int x_h){
 	// transpose
 	float x_arr_t[x_w*x_h];
 	transpose(x_arr, x_arr_t, x_w, x_h);
-	//vector<vector<float>> x = array2_2dvec(x_arr_t, x_h, x_w);
 	// fc layers
 	int w0 = OM_WEIGHT_0[0].size();
 	int w2 = OM_WEIGHT_2[0].size();
 	int w4 = OM_WEIGHT_4[0].size();
 	float x1[x_h*w0];
 	float x2[x_h*w2];
-	float x1_out[x_h*w0];
-	float x2_out[x_h*w2];
-	linear(x_arr_t, x1, OM_WEIGHT_0, OM_BIAS_0, x_h, x_w, w0);
-	relu( x1 , x1_out, x_h, w0);
-	linear(x1_out, x2, OM_WEIGHT_2, OM_BIAS_2, x_h, w0, w2);
-	relu( x2, x2_out , x_h, w2);
-	linear(x2_out, x_out, OM_WEIGHT_4, OM_BIAS_4, x_h, w2, w4);
+	linear(x_arr_t, x1, OM_WEIGHT_0, OM_BIAS_0, x_h, x_w, w0, "relu");
+	linear(x1, x2, OM_WEIGHT_2, OM_BIAS_2, x_h, w0, w2, "relu");
+	linear(x2, x_out, OM_WEIGHT_4, OM_BIAS_4, x_h, w2, w4, "None");
 }
 
 vector<vector<vector<float>>> forward(vector<vector<vector<float>>> obj,
@@ -157,18 +149,18 @@ vector<vector<vector<float>>> forward(vector<vector<vector<float>>> obj,
 	flatten2dvec2array(ri[i], ri_arr);
 
 	transpose(obj_arr, obj_arr_t, obj_w, obj_h);
-	matmul(obj_arr_t, sr_arr, sender_arr, obj_t_w, obj_t_h, sender_h);
-	matmul(obj_arr_t, rr_arr, receiver_arr, obj_t_w, obj_t_h, receiver_h);
+	fastMatMul(obj_arr_t, sr_arr, sender_arr, obj_t_w, obj_t_h, sender_h);
+	fastMatMul(obj_arr_t, rr_arr, receiver_arr, obj_t_w, obj_t_h, receiver_h);
 	interaction_cat(term_w, term_h, sender_w, sender_h, receiver_w, receiver_h,
 									ri_w, ri_h, sender_arr, receiver_arr, ri_arr, interaction_term_arr);
 	relational_model(interaction_term_arr, effect_arr, term_w, term_h);
-	matmul(rr_arr, effect_arr, effect_receiver_arr, rr_w, rr_h, effect_h);
+	fastMatMul(rr_arr, effect_arr, effect_receiver_arr, rr_w, rr_h, effect_h);
 	transpose(effect_receiver_arr, effect_receiver_arr_t, effect_receiver_w, effect_receiver_h);
 	aggregate_cat(obj_arr_t, effect_receiver_arr, agg_arr, obj_t_w, obj_t_h, effect_receiver_h, effect_receiver_w);
 	object_model(agg_arr, inf_arr, aggregate_w, aggregate_h);
 	transpose(inf_arr, predict_arr, pred_h, pred_w);
-	matmul(predict_arr, sr_arr, sender_arr, pred_w, pred_h, sender_h);
-	matmul(predict_arr, rr_arr, receiver_arr, pred_w, pred_h, receiver_h);
+	fastMatMul(predict_arr, sr_arr, sender_arr, pred_w, pred_h, sender_h);
+	fastMatMul(predict_arr, rr_arr, receiver_arr, pred_w, pred_h, receiver_h);
 	interaction_cat(term_w, term_h, sender_w, sender_h, receiver_w, receiver_h,
 									ri_w, ri_h, sender_arr, receiver_arr, ri_arr, interaction_term_arr);
 	relational_model(interaction_term_arr, pred_arr, term_w, term_h);

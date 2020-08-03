@@ -1,9 +1,12 @@
-#define SIGMOID(inp) (1.0f / (1 + exp(-inp)))
+#define SIGMOID(inp) (1.0f / (1 + native_exp(-inp)))
 #define RELU(inp) (inp > 0 ? inp : 0)
 #define global_idx(x_idx, y_idx, m) (x_idx * m + y_idx)
 
 __attribute__((uses_global_work_offset(0)))
-__kernel void add_bias(__global float *inp, __global float *bias, __global float *out, ushort m)
+__kernel void add_bias(__global float *inp,
+                       __global float *bias,
+                       __global float *out,
+                       ushort m)
 {
     // global space:  inp.shape
     int x_idx = get_global_id(0);
@@ -11,6 +14,67 @@ __kernel void add_bias(__global float *inp, __global float *bias, __global float
     int x = global_idx(x_idx, y_idx, m);
     out[x] = inp[x] + bias[y_idx];
 }
+
+__kernel void linear(
+      __global float* A,
+      __global float* B,
+      __global float* bias,
+      __global float* C,
+      __const ushort M,
+      __const ushort K,
+      __const ushort N){
+
+  int m = get_global_id(0);
+  int n = get_global_id(1);
+  int x = global_idx(m, n, M);
+
+  float acc = 0.0f;
+  for(int k = 0; k < K; ++k){
+    acc += A[m*K + k] * B[k*N + n];
+  }
+  C[m*N + n] = acc + bias[n];
+}
+
+__kernel void linear_relu(
+      __global float* A,
+      __global float* B,
+      __global float* bias,
+      __global float* C,
+      __const ushort M,
+      __const ushort K,
+      __const ushort N){
+
+  int m = get_global_id(0);
+  int n = get_global_id(1);
+  int x = global_idx(m, n, M);
+
+  float acc = 0.0f;
+  for(int k = 0; k < K; ++k){
+    acc += A[m*K + k] * B[k*N + n];
+  }
+  C[m*N + n] = RELU(acc + bias[n]);
+}
+
+__kernel void linear_sigmoid(
+      __global float* A,
+      __global float* B,
+      __global float* bias,
+      __global float* C,
+      __const ushort M,
+      __const ushort K,
+      __const ushort N){
+
+  int m = get_global_id(0);
+  int n = get_global_id(1);
+  int x = global_idx(m, n, M);
+
+  float acc = 0.0f;
+  for(int k = 0; k < K; ++k){
+    acc += A[m*K + k] * B[k*N + n];
+  }
+  C[m*N + n] = SIGMOID(acc + bias[n]);
+}
+
 
 __attribute__((uses_global_work_offset(0)))
 __kernel void matMul(__global const float* a, __global const float* b, __global float* result,
@@ -27,6 +91,41 @@ __kernel void matMul(__global const float* a, __global const float* b, __global 
     result[idx] = temp;
 }
 
+__kernel void matrixMul(
+      __global float* A,
+      __global float* B,
+      __global float* C,
+      __const ushort M,
+      __const ushort K,
+      __const ushort N){
+  int m = get_global_id(0);
+  int n = get_global_id(1);
+
+
+  float acc = 0.0f;
+  for(int k = 0; k < K; ++k){
+    acc += A[m*K + k] * B[k*N + n];
+  }
+  C[m*N + n] = acc;
+}
+
+/*
+__kernel void matrixMul(
+      __global float* A,
+      __global float* B,
+      __global float* C,
+      __const ushort M,
+      __const ushort K,
+      __const ushort N){
+  int m = get_global_id(0);
+  int n = get_global_id(1);
+  float acc = 0.0f;
+  for(int k = 0; k < K; ++k){
+    acc += A[m*K + k] * B[k*N + n];
+  }
+  C[m*N + n] = acc;
+}
+*/
 __attribute__((uses_global_work_offset(0)))
 __kernel void transpose(__global float *a_t, __global float *a, ushort n, ushort m)
 {

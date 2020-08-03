@@ -288,3 +288,179 @@ void matmul(float* a, float* b, float* out, int m_, int n_, int p_){
   clReleaseMemObject(b_buf);
   clReleaseMemObject(out_buf);
 }
+
+void fastMatMul(float* a, float* b, float* out, int m_, int n_, int p_){
+  // get kernel to execute
+  cl_kernel kernel = kernels["matrixMul"];
+  cl_int status;
+
+  const ushort m = (ushort) m_; // a.size();
+	const ushort n = (ushort) n_; // a[0].size();
+	const ushort p = (ushort) p_; // b[0].size();
+
+  int a_size = (int) m * n;
+  int b_size = (int) n * p;
+  int out_size = (int) m * p;
+
+  // create buffers
+  cl_mem a_buf = create_input_buffer_from_arr(a, a_size, status);
+  cl_mem b_buf = create_input_buffer_from_arr(b, b_size, status);
+  cl_mem out_buf = create_output_buffer(out_size, status);
+  // Set the kernel argument (argument 0)
+
+  status  =  clSetKernelArg(kernel, 0, sizeof(cl_mem), &a_buf);
+  status |=  clSetKernelArg(kernel, 1, sizeof(cl_mem), &b_buf);
+  status |=  clSetKernelArg(kernel, 2, sizeof(cl_mem), &out_buf);
+  status |=  clSetKernelArg(kernel, 3, sizeof(ushort), &m);
+  status |=  clSetKernelArg(kernel, 4, sizeof(ushort), &n);
+  status |=  clSetKernelArg(kernel, 5, sizeof(ushort), &p);
+  checkError(status, "Setting kernel arguments");
+  // execute kernel
+  const size_t global[2] = {m, p};
+  status = clEnqueueNDRangeKernel(queue, kernel, 2, NULL, global, NULL, 0, NULL, NULL);
+  checkError(status, "Enqueuing kernel");
+  // Wait for command queue to complete pending events
+  status = clFinish(queue);
+  checkError(status, "Waiting for queue to finish");
+  // read buffer to host
+  read_out_buffer(out_buf, out, out_size, status);
+
+  clReleaseMemObject(a_buf);
+  clReleaseMemObject(b_buf);
+  clReleaseMemObject(out_buf);
+}
+
+void cl_linear(float* a, float* b, float* bias, float* out, int m_, int n_, int p_){
+  // get kernel to execute
+  cl_kernel kernel = kernels["linear"];
+  cl_int status;
+
+  const ushort m = (ushort) m_; // a.size();
+	const ushort n = (ushort) n_; // a[0].size();
+	const ushort p = (ushort) p_; // b[0].size();
+
+  int a_size = (int) m * n;
+  int b_size = (int) n * p;
+  int out_size = (int) m * p;
+
+  // create buffers
+  cl_mem a_buf = create_input_buffer_from_arr(a, a_size, status);
+  cl_mem b_buf = create_input_buffer_from_arr(b, b_size, status);
+  cl_mem bias_buf = create_input_buffer_from_arr(bias, p, status);
+  cl_mem out_buf = create_output_buffer(out_size, status);
+  // Set the kernel argument (argument 0)
+  status  =  clSetKernelArg(kernel, 0, sizeof(cl_mem), &a_buf);
+  status |=  clSetKernelArg(kernel, 1, sizeof(cl_mem), &b_buf);
+  status |=  clSetKernelArg(kernel, 2, sizeof(cl_mem), &bias_buf);
+  status |=  clSetKernelArg(kernel, 3, sizeof(cl_mem), &out_buf);
+  status |=  clSetKernelArg(kernel, 4, sizeof(ushort), &m);
+  status |=  clSetKernelArg(kernel, 5, sizeof(ushort), &n);
+  status |=  clSetKernelArg(kernel, 6, sizeof(ushort), &p);
+  checkError(status, "Setting kernel arguments");
+  // execute kernel
+  //cout << "hello " << 2 << " \n";
+  const size_t global[2] = {m, p};
+  status = clEnqueueNDRangeKernel(queue, kernel, 2, NULL, global, NULL, 0, NULL, NULL);
+  checkError(status, "Enqueuing kernel");
+  //cout << "hello " << 3 << " \n";
+  // Wait for command queue to complete pending events
+  status = clFinish(queue);
+  checkError(status, "Waiting for queue to finish");
+  // read buffer to host
+  read_out_buffer(out_buf, out, out_size, status);
+
+  clReleaseMemObject(a_buf);
+  clReleaseMemObject(b_buf);
+  clReleaseMemObject(bias_buf);
+  clReleaseMemObject(out_buf);
+}
+
+void cl_linear_relu(float* a, float* b, float* bias, float* out, int m_, int n_, int p_){
+  // get kernel to execute
+  cl_kernel kernel = kernels["linear_relu"];
+  cl_int status;
+
+  const ushort m = (ushort) m_; // a.size();
+	const ushort n = (ushort) n_; // a[0].size();
+	const ushort p = (ushort) p_; // b[0].size();
+
+  int a_size = (int) m * n;
+  int b_size = (int) n * p;
+  int out_size = (int) m * p;
+
+  // create buffers
+  cl_mem a_buf = create_input_buffer_from_arr(a, a_size, status);
+  cl_mem b_buf = create_input_buffer_from_arr(b, b_size, status);
+  cl_mem bias_buf = create_input_buffer_from_arr(bias, p, status);
+  cl_mem out_buf = create_output_buffer(out_size, status);
+  // Set the kernel argument (argument 0)
+  status  =  clSetKernelArg(kernel, 0, sizeof(cl_mem), &a_buf);
+  status |=  clSetKernelArg(kernel, 1, sizeof(cl_mem), &b_buf);
+  status |=  clSetKernelArg(kernel, 2, sizeof(cl_mem), &bias_buf);
+  status |=  clSetKernelArg(kernel, 3, sizeof(cl_mem), &out_buf);
+  status |=  clSetKernelArg(kernel, 4, sizeof(ushort), &m);
+  status |=  clSetKernelArg(kernel, 5, sizeof(ushort), &n);
+  status |=  clSetKernelArg(kernel, 6, sizeof(ushort), &p);
+  checkError(status, "Setting kernel arguments");
+  // execute kernel
+  //cout << "hello " << 2 << " \n";
+  const size_t global[2] = {m, p};
+  status = clEnqueueNDRangeKernel(queue, kernel, 2, NULL, global, NULL, 0, NULL, NULL);
+  checkError(status, "Enqueuing kernel");
+  //cout << "hello " << 3 << " \n";
+  // Wait for command queue to complete pending events
+  status = clFinish(queue);
+  checkError(status, "Waiting for queue to finish");
+  // read buffer to host
+  read_out_buffer(out_buf, out, out_size, status);
+
+  clReleaseMemObject(a_buf);
+  clReleaseMemObject(b_buf);
+  clReleaseMemObject(bias_buf);
+  clReleaseMemObject(out_buf);
+}
+
+void cl_linear_sigmoid(float* a, float* b, float* bias, float* out, int m_, int n_, int p_){
+  // get kernel to execute
+  cl_kernel kernel = kernels["linear_sigmoid"];
+  cl_int status;
+
+  const ushort m = (ushort) m_; // a.size();
+	const ushort n = (ushort) n_; // a[0].size();
+	const ushort p = (ushort) p_; // b[0].size();
+
+  int a_size = (int) m * n;
+  int b_size = (int) n * p;
+  int out_size = (int) m * p;
+
+  // create buffers
+  cl_mem a_buf = create_input_buffer_from_arr(a, a_size, status);
+  cl_mem b_buf = create_input_buffer_from_arr(b, b_size, status);
+  cl_mem bias_buf = create_input_buffer_from_arr(bias, p, status);
+  cl_mem out_buf = create_output_buffer(out_size, status);
+  // Set the kernel argument (argument 0)
+  status  =  clSetKernelArg(kernel, 0, sizeof(cl_mem), &a_buf);
+  status |=  clSetKernelArg(kernel, 1, sizeof(cl_mem), &b_buf);
+  status |=  clSetKernelArg(kernel, 2, sizeof(cl_mem), &bias_buf);
+  status |=  clSetKernelArg(kernel, 3, sizeof(cl_mem), &out_buf);
+  status |=  clSetKernelArg(kernel, 4, sizeof(ushort), &m);
+  status |=  clSetKernelArg(kernel, 5, sizeof(ushort), &n);
+  status |=  clSetKernelArg(kernel, 6, sizeof(ushort), &p);
+  checkError(status, "Setting kernel arguments");
+  // execute kernel
+  //cout << "hello " << 2 << " \n";
+  const size_t global[2] = {m, p};
+  status = clEnqueueNDRangeKernel(queue, kernel, 2, NULL, global, NULL, 0, NULL, NULL);
+  checkError(status, "Enqueuing kernel");
+  //cout << "hello " << 3 << " \n";
+  // Wait for command queue to complete pending events
+  status = clFinish(queue);
+  checkError(status, "Waiting for queue to finish");
+  // read buffer to host
+  read_out_buffer(out_buf, out, out_size, status);
+
+  clReleaseMemObject(a_buf);
+  clReleaseMemObject(b_buf);
+  clReleaseMemObject(bias_buf);
+  clReleaseMemObject(out_buf);
+}
