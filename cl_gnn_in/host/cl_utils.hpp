@@ -19,11 +19,9 @@ void createKernel(string kernel_name){
 
 void initializeOpenCLParameters(){
     cl_int err;
-
     if(!setCwdToExeDir()) {
 	exit(1);
     }
-
     // Get the OpenCL platform.
     platform = findPlatform("Intel(R) FPGA");
     if(platform == NULL) {
@@ -60,8 +58,8 @@ void initializeOpenCLParameters(){
     checkErr(err, "Failed to build program");
 
     createKernel("add_bias");
-    createKernel("matMul");
     createKernel("matrixMul");
+    createKernel("matmul");
     createKernel("linear");
     createKernel("linear_relu");
     createKernel("linear_sigmoid");

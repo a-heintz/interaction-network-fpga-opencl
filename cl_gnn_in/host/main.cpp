@@ -12,6 +12,7 @@ using namespace std::chrono;
 // 465900 microsec on emulator -- create linear kernel
 // 254952 microsec on emulator -- create linear + relu kernel and linear + sigmoid kernel
 // >> this implementation lost precision more significantly than the most recent ones
+// 1675163
 int main(int argc, char **argv)
 {
 	Options options(argc, argv);

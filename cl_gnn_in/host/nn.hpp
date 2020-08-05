@@ -48,13 +48,7 @@ void linear(float* x_arr, float* out_bias_arr, vector<vector<float>> weight, vec
 	float bias_arr[p];
 	flatten2dvec2array(weight, weight_arr);
 	flatten1dvec2array(bias, bias_arr);
-	if (activation == "relu"){
-		cl_linear_relu(x_arr, weight_arr, bias_arr, out_bias_arr, m, n, p);
-	} else if (activation == "sigmoid"){
-		cl_linear_sigmoid(x_arr, weight_arr, bias_arr, out_bias_arr, m, n, p);
-	} else {
-		cl_linear(x_arr, weight_arr, bias_arr, out_bias_arr, m, n, p);
-	}
+	cl_linear(x_arr, weight_arr, bias_arr, out_bias_arr, m, n, p, activation);
 }
 
 void relational_model(float* x_arr, float* x_out, int x_w, int x_h){
@@ -69,7 +63,6 @@ void relational_model(float* x_arr, float* x_out, int x_w, int x_h){
 	float x1[x_h*w0];
 	float x2[x_h*w2];
 	float x4[x_h*w4];
-	float x6[x_h*w6];
 	linear(x_arr_t, x1, RM_WEIGHT_0, RM_BIAS_0, x_h, x_w, w0, "relu");
 	linear(x1, x2, RM_WEIGHT_2, RM_BIAS_2, x_h, w0, w2, "relu");
 	linear(x2, x4, RM_WEIGHT_4, RM_BIAS_4, x_h, w2, w4, "relu");
@@ -143,28 +136,31 @@ vector<vector<vector<float>>> forward(vector<vector<vector<float>>> obj,
 	float predict_arr[pred_h*pred_w];
 	float pred_arr[out_w*out_h];
 
+	auto start = high_resolution_clock::now();
+
+
 	flatten2dvec2array(obj[i], obj_arr);
 	flatten2dvec2array(sr[i], sr_arr);
 	flatten2dvec2array(rr[i], rr_arr);
 	flatten2dvec2array(ri[i], ri_arr);
 
 	transpose(obj_arr, obj_arr_t, obj_w, obj_h);
-	fastMatMul(obj_arr_t, sr_arr, sender_arr, obj_t_w, obj_t_h, sender_h);
-	fastMatMul(obj_arr_t, rr_arr, receiver_arr, obj_t_w, obj_t_h, receiver_h);
+
+	matmul(1, obj_arr_t, sr_arr, sender_arr, obj_t_w, obj_t_h, sender_h);
+	matmul(1, obj_arr_t, rr_arr, receiver_arr, obj_t_w, obj_t_h, receiver_h);
 	interaction_cat(term_w, term_h, sender_w, sender_h, receiver_w, receiver_h,
 									ri_w, ri_h, sender_arr, receiver_arr, ri_arr, interaction_term_arr);
 	relational_model(interaction_term_arr, effect_arr, term_w, term_h);
-	fastMatMul(rr_arr, effect_arr, effect_receiver_arr, rr_w, rr_h, effect_h);
+	matmul(1, rr_arr, effect_arr, effect_receiver_arr, rr_w, rr_h, effect_h);
 	transpose(effect_receiver_arr, effect_receiver_arr_t, effect_receiver_w, effect_receiver_h);
 	aggregate_cat(obj_arr_t, effect_receiver_arr, agg_arr, obj_t_w, obj_t_h, effect_receiver_h, effect_receiver_w);
 	object_model(agg_arr, inf_arr, aggregate_w, aggregate_h);
 	transpose(inf_arr, predict_arr, pred_h, pred_w);
-	fastMatMul(predict_arr, sr_arr, sender_arr, pred_w, pred_h, sender_h);
-	fastMatMul(predict_arr, rr_arr, receiver_arr, pred_w, pred_h, receiver_h);
+	matmul(1, predict_arr, sr_arr, sender_arr, pred_w, pred_h, sender_h);
+	matmul(1, predict_arr, rr_arr, receiver_arr, pred_w, pred_h, receiver_h);
 	interaction_cat(term_w, term_h, sender_w, sender_h, receiver_w, receiver_h,
 									ri_w, ri_h, sender_arr, receiver_arr, ri_arr, interaction_term_arr);
 	relational_model(interaction_term_arr, pred_arr, term_w, term_h);
-
 	predict = array2_2dvec(pred_arr, out_w, out_h);
 	int m = predict.size();
 	predicted.push_back(predict);
