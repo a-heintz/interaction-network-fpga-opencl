@@ -13,7 +13,7 @@
 #include "cl_nn.hpp"
 using namespace std;
 using namespace std::chrono;
-#define global_idx(x_idx, y_idx, m) (x_idx * m + y_idx)
+//#define global_idx(x_idx, y_idx, m) (x_idx * m + y_idx)
 
 vector<vector<float>> array2_2dvec(float* inp, int m, int n){
 	vector<vector<float>> x(m, vector<float>(n));
@@ -136,32 +136,28 @@ vector<vector<vector<float>>> forward(vector<vector<vector<float>>> obj,
 	float predict_arr[pred_h*pred_w];
 	float pred_arr[out_w*out_h];
 
-	auto start = high_resolution_clock::now();
-
-
 	flatten2dvec2array(obj[i], obj_arr);
 	flatten2dvec2array(sr[i], sr_arr);
 	flatten2dvec2array(rr[i], rr_arr);
 	flatten2dvec2array(ri[i], ri_arr);
-
 	transpose(obj_arr, obj_arr_t, obj_w, obj_h);
-
-	matmul(1, obj_arr_t, sr_arr, sender_arr, obj_t_w, obj_t_h, sender_h);
-	matmul(1, obj_arr_t, rr_arr, receiver_arr, obj_t_w, obj_t_h, receiver_h);
+	fastMatMul(obj_arr_t, sr_arr, sender_arr, obj_t_w, obj_t_h, sender_h);
+	fastMatMul(obj_arr_t, rr_arr, receiver_arr, obj_t_w, obj_t_h, receiver_h);
 	interaction_cat(term_w, term_h, sender_w, sender_h, receiver_w, receiver_h,
 									ri_w, ri_h, sender_arr, receiver_arr, ri_arr, interaction_term_arr);
 	relational_model(interaction_term_arr, effect_arr, term_w, term_h);
-	matmul(1, rr_arr, effect_arr, effect_receiver_arr, rr_w, rr_h, effect_h);
+	fastMatMul(rr_arr, effect_arr, effect_receiver_arr, rr_w, rr_h, effect_h);
 	transpose(effect_receiver_arr, effect_receiver_arr_t, effect_receiver_w, effect_receiver_h);
 	aggregate_cat(obj_arr_t, effect_receiver_arr, agg_arr, obj_t_w, obj_t_h, effect_receiver_h, effect_receiver_w);
 	object_model(agg_arr, inf_arr, aggregate_w, aggregate_h);
 	transpose(inf_arr, predict_arr, pred_h, pred_w);
-	matmul(1, predict_arr, sr_arr, sender_arr, pred_w, pred_h, sender_h);
-	matmul(1, predict_arr, rr_arr, receiver_arr, pred_w, pred_h, receiver_h);
+	fastMatMul(predict_arr, sr_arr, sender_arr, pred_w, pred_h, sender_h);
+	fastMatMul(predict_arr, rr_arr, receiver_arr, pred_w, pred_h, receiver_h);
 	interaction_cat(term_w, term_h, sender_w, sender_h, receiver_w, receiver_h,
 									ri_w, ri_h, sender_arr, receiver_arr, ri_arr, interaction_term_arr);
 	relational_model(interaction_term_arr, pred_arr, term_w, term_h);
 	predict = array2_2dvec(pred_arr, out_w, out_h);
+	//cout << out_w << " " << out_h << "\n";
 	int m = predict.size();
 	predicted.push_back(predict);
 	for (int j = 0; j < m; j++) {

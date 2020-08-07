@@ -57,15 +57,10 @@ void initializeOpenCLParameters(){
     err = clBuildProgram(program, 0, NULL, "", NULL, NULL);
     checkErr(err, "Failed to build program");
 
-    createKernel("add_bias");
     createKernel("matrixMul");
-    createKernel("matmul");
     createKernel("linear");
-    createKernel("linear_relu");
-    createKernel("linear_sigmoid");
     createKernel("transpose");
-    createKernel("relu");
-    createKernel("sigmoid");
+    createKernel("pad");
     createKernel("interaction_cat");
     createKernel("aggregate_cat");
 }

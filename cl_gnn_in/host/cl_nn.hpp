@@ -8,6 +8,15 @@ using namespace std;
 using namespace std::chrono;
 #define global_idx(x_idx, y_idx, x_size) (x_idx * x_size + y_idx)
 
+int shrRoundUp(int K, int N)
+{
+    int rem = (N + K) % K;
+    if (rem == 0)
+        return N;
+    else
+        return N + K - rem;
+}
+
 cl_mem create_input_buffer_1d(vector<float> inp, int size, cl_int status){
   float inp_arr[size];
   for (int i = 0; i < size; i++) {
@@ -36,7 +45,7 @@ cl_mem create_output_buffer(int size, cl_int status){
 }
 
 cl_mem create_intermediate_buffer(float* inp, int size, cl_int status){
-  cl_mem int_buf = clCreateBuffer(context, CL_MEM_COPY_HOST_PTR, sizeof(float) * size, inp, &status);
+  cl_mem int_buf = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(float) * size, inp, &status);
   checkError(status, "Creating buffer out_buf");
   return int_buf;
 }
@@ -82,89 +91,12 @@ void transpose(float *inp, float* out, int m, int n)
     // execute kernel
     const size_t global[2] = {m, n};
     run_kernel(global, kernel, status);
+
     // read buffer to host
     read_out_buffer(out_buf, out, size, status);
     // clean up -- destroy buffers and free up memory on device
     clReleaseMemObject(inp_buf);
     clReleaseMemObject(out_buf);
-
-}
-
-void sigmoid(float* inp, float* out, int m_, int n_){
-  // get kernel to execute
-  cl_kernel kernel = kernels["sigmoid"];
-  cl_int status;
-  const ushort m = m_; //inp.size();
-  const ushort n = n_; //inp[0].size();
-  int size = (int) m * n;
-  // create buffers
-  cl_mem inp_buf = create_input_buffer_from_arr(inp, size, status);
-  cl_mem out_buf = create_output_buffer(size, status);
-  // Set the kernel argument (argument 0)
-  status  =  clSetKernelArg(kernel, 0, sizeof(cl_mem), &inp_buf);
-  status |=  clSetKernelArg(kernel, 1, sizeof(cl_mem), &out_buf);
-  status |=  clSetKernelArg(kernel, 2, sizeof(ushort), &n);
-  checkError(status, "Setting kernel arguments");
-  // execute kernel
-  const size_t global[2] = {m, n};
-  run_kernel(global, kernel, status);
-  // read buffer to host
-  read_out_buffer(out_buf, out, size, status);
-
-  clReleaseMemObject(inp_buf);
-  clReleaseMemObject(out_buf);
-}
-
-void relu(float* inp, float* out, int m_, int n_){
-  // get kernel to execute
-  cl_kernel kernel = kernels["relu"];
-  cl_int status;
-  const ushort m = m_; //inp.size();
-  const ushort n = n_; //inp[0].size();
-  int size = (int) m * n;
-  // create buffers
-  cl_mem inp_buf = create_input_buffer_from_arr(inp, size, status);
-  cl_mem out_buf = create_output_buffer(size, status);
-  // Set the kernel argument (argument 0)
-  status  =  clSetKernelArg(kernel, 0, sizeof(cl_mem), &inp_buf);
-  status |=  clSetKernelArg(kernel, 1, sizeof(cl_mem), &out_buf);
-  status |=  clSetKernelArg(kernel, 2, sizeof(ushort), &n);
-  checkError(status, "Setting kernel arguments");
-  // execute kernel
-  const size_t global[2] = {m, n};
-  run_kernel(global, kernel, status);
-  // read buffer to host
-  read_out_buffer(out_buf, out, size, status);
-  clReleaseMemObject(inp_buf);
-  clReleaseMemObject(out_buf);
-}
-
-void add_bias(float* inp, float* bias, float* out, int m_, int n_){
-  // get kernel to execute
-  cl_kernel kernel = kernels["add_bias"];
-  cl_int status;
-  const ushort m = (ushort) m_; //inp.size();
-  const ushort n = (ushort) n_; //inp[0].size();
-  int size = (int) m * n;
-  // create buffers
-  cl_mem inp_buf = create_input_buffer_from_arr(inp, size, status);
-  cl_mem bias_buf = create_input_buffer_from_arr(bias, n, status);
-  cl_mem out_buf = create_output_buffer(size, status);
-  // Set the kernel argument (argument 0)
-  status  =  clSetKernelArg(kernel, 0, sizeof(cl_mem), &inp_buf);
-  status |=  clSetKernelArg(kernel, 1, sizeof(cl_mem), &bias_buf);
-  status |=  clSetKernelArg(kernel, 2, sizeof(cl_mem), &out_buf);
-  status |=  clSetKernelArg(kernel, 3, sizeof(ushort), &n);
-  checkError(status, "Setting kernel arguments");
-  // execute kernel
-  const size_t global[2] = {m, n};
-  run_kernel(global, kernel, status);
-  // read buffer to host
-  read_out_buffer(out_buf, out, size, status);
-
-  clReleaseMemObject(inp_buf);
-  clReleaseMemObject(out_buf);
-  clReleaseMemObject(bias_buf);
 }
 
 void interaction_cat(int term_w,
@@ -182,7 +114,6 @@ void interaction_cat(int term_w,
   // get kernel to execute
   cl_kernel kernel = kernels["interaction_cat"];
   cl_int status;
-
   // create buffers
   int size_sender = sender_w * sender_h;
   cl_mem sender_buf = create_input_buffer_from_arr(sender, size_sender, status);
@@ -225,7 +156,6 @@ void aggregate_cat(float* obj_t,
   // get kernel to execute
   cl_kernel kernel = kernels["aggregate_cat"];
   cl_int status;
-
   // create buffers
   int size_obj_t = obj_t_w * obj_t_h;
   cl_mem obj_t_buf = create_input_buffer_from_arr(obj_t, size_obj_t, status);
@@ -235,8 +165,8 @@ void aggregate_cat(float* obj_t,
   cl_mem out_buf = create_output_buffer(size_out, status);
   // Set the kernel argument (argument 0)
   status  =  clSetKernelArg(kernel, 0, sizeof(cl_mem), &obj_t_buf);
-  status  =  clSetKernelArg(kernel, 1, sizeof(cl_mem), &effect_receiver_buf);
-  status  =  clSetKernelArg(kernel, 2, sizeof(cl_mem), &out_buf);
+  status |=  clSetKernelArg(kernel, 1, sizeof(cl_mem), &effect_receiver_buf);
+  status |=  clSetKernelArg(kernel, 2, sizeof(cl_mem), &out_buf);
   status |=  clSetKernelArg(kernel, 3, sizeof(ushort), &term_h);
   checkError(status, "Setting kernel arguments");
   // execute kernel
@@ -246,87 +176,32 @@ void aggregate_cat(float* obj_t,
   run_kernel(global, kernel, status);
   // read buffer to host
   read_out_buffer(out_buf, out, size_out, status);
-
   clReleaseMemObject(obj_t_buf);
   clReleaseMemObject(effect_receiver_buf);
-  clReleaseMemObject(out_buf);
-
-}
-
-int shrRoundUp(int K, int N)
-{
-    int rem = (N + K) % K;
-
-    if (rem == 0)
-        return N;
-    else
-        return N + K - rem;
-}
-
-void matmul(int BLOCK_SIZE, float* a, float* b, float* out, int m_, int n_, int p_){
-
-  const ushort m = (ushort) m_;
-	const ushort n = (ushort) n_;
-	const ushort p = (ushort) p_;
-
-  cl_kernel kernel = kernels["matmul"];
-  cl_int status;
-
-  int a_size = (int) m * n;
-  int b_size = (int) n * p;
-  int out_size = (int) m * p;
-
-  // create buffers
-  cl_mem a_buf = create_input_buffer_from_arr(a, a_size, status);
-  cl_mem b_buf = create_input_buffer_from_arr(b, b_size, status);
-  cl_mem out_buf = create_output_buffer(out_size, status);
-  // Set the kernel argument (argument 0)
-  //cout << p_ << " " << m_ << "\n";
-  status  =  clSetKernelArg(kernel, 0, sizeof(cl_mem), &a_buf);
-  status |=  clSetKernelArg(kernel, 1, sizeof(cl_mem), &b_buf);
-  status |=  clSetKernelArg(kernel, 2, sizeof(cl_mem), &out_buf);
-  status |=  clSetKernelArg(kernel, 3, sizeof(float) * BLOCK_SIZE * BLOCK_SIZE, 0 );
-  status |=  clSetKernelArg(kernel, 4, sizeof(float) * BLOCK_SIZE * BLOCK_SIZE, 0 );
-  status |=  clSetKernelArg(kernel, 5, sizeof(ushort), &n);
-  status |=  clSetKernelArg(kernel, 6, sizeof(ushort), &p);
-  status |=  clSetKernelArg(kernel, 7, sizeof(int), &BLOCK_SIZE);
-  checkError(status, "Setting kernel arguments");
-  // execute kernel
-  size_t local[2] = {BLOCK_SIZE, BLOCK_SIZE};
-  size_t global[2] = {p_,m_};
-  status = clEnqueueNDRangeKernel(queue, kernel, 2, NULL, global, local, 0, NULL, NULL);
-  checkError(status, "Enqueuing kernel");
-
-  status = clFinish(queue);
-  checkError(status, "Waiting for queue to finish");
-  read_out_buffer(out_buf, out, out_size, status);
   clReleaseMemObject(out_buf);
 }
 
 void cl_linear(float* a, float* b, float* bias, float* out, int m_, int n_, int p_, char* activation){
-  // get kernel to execute
-  cl_kernel kernel;
-  if(activation == "relu"){
-    kernel = kernels["linear_relu"];
-  } else if(activation == "sigmoid"){
-    kernel = kernels["linear_sigmoid"];
-  } else {
-    kernel = kernels["linear"];
-  }
   cl_int status;
-
-  const ushort m = (ushort) m_; // a.size();
-	const ushort n = (ushort) n_; // a[0].size();
-	const ushort p = (ushort) p_; // b[0].size();
-
+  const ushort m = (ushort) m_;
+	const ushort n = (ushort) n_;
+	const ushort p = (ushort) p_;
   int a_size = (int) m * n;
   int b_size = (int) n * p;
   int out_size = (int) m * p;
-
-  int BLOCK_SIZE = 1;
-  // create buffers
   cl_mem a_buf = create_input_buffer_from_arr(a, a_size, status);
   cl_mem b_buf = create_input_buffer_from_arr(b, b_size, status);
+  int BLOCK_SIZE = 2;
+  // get kernel to execute
+  cl_kernel kernel = kernels["linear"];
+  int activation_int;
+  if(activation == "relu"){
+    activation_int = 1;
+  } else if(activation == "sigmoid"){
+    activation_int = 2;
+  } else {
+    activation_int = 3;
+  }
   cl_mem bias_buf = create_input_buffer_from_arr(bias, p, status);
   cl_mem out_buf = create_output_buffer(out_size, status);
   // Set the kernel argument (argument 0)
@@ -334,48 +209,38 @@ void cl_linear(float* a, float* b, float* bias, float* out, int m_, int n_, int 
   status |=  clSetKernelArg(kernel, 1, sizeof(cl_mem), &b_buf);
   status |=  clSetKernelArg(kernel, 2, sizeof(cl_mem), &bias_buf);
   status |=  clSetKernelArg(kernel, 3, sizeof(cl_mem), &out_buf);
-  status |=  clSetKernelArg(kernel, 4, sizeof(float) * BLOCK_SIZE * BLOCK_SIZE, 0 );
-  status |=  clSetKernelArg(kernel, 5, sizeof(float) * BLOCK_SIZE * BLOCK_SIZE, 0 );
-  status |=  clSetKernelArg(kernel, 6, sizeof(ushort), &n);
-  status |=  clSetKernelArg(kernel, 7, sizeof(ushort), &p);
-  status |=  clSetKernelArg(kernel, 8, sizeof(int), &BLOCK_SIZE);
+  status |=  clSetKernelArg(kernel, 4, sizeof(ushort), &m);
+  status |=  clSetKernelArg(kernel, 5, sizeof(ushort), &n);
+  status |=  clSetKernelArg(kernel, 6, sizeof(ushort), &p);
+  status |=  clSetKernelArg(kernel, 7, sizeof(int), &BLOCK_SIZE);
+  status |=  clSetKernelArg(kernel, 8, sizeof(int), &activation_int);
   checkError(status, "Setting kernel arguments");
   size_t local[2] = {BLOCK_SIZE, BLOCK_SIZE};
-  size_t global[2] = {p_,m_};
-  status = clEnqueueNDRangeKernel(queue, kernel, 2, NULL, global, local, 0, NULL, NULL);
+  size_t global[2] = {m, p};
+  status = clEnqueueNDRangeKernel(queue, kernel, 2, NULL, global, NULL, 0, NULL, NULL);
   checkError(status, "Enqueuing kernel");
-  //cout << "hello " << 3 << " \n";
   // Wait for command queue to complete pending events
   status = clFinish(queue);
   checkError(status, "Waiting for queue to finish");
   // read buffer to host
   read_out_buffer(out_buf, out, out_size, status);
-
-  clReleaseMemObject(a_buf);
-  clReleaseMemObject(b_buf);
-  clReleaseMemObject(bias_buf);
-  clReleaseMemObject(out_buf);
 }
 
 void fastMatMul(float* a, float* b, float* out, int m_, int n_, int p_){
   // get kernel to execute
   cl_kernel kernel = kernels["matrixMul"];
   cl_int status;
-
   const ushort m = (ushort) m_; // a.size();
 	const ushort n = (ushort) n_; // a[0].size();
 	const ushort p = (ushort) p_; // b[0].size();
-
   int a_size = (int) m * n;
   int b_size = (int) n * p;
   int out_size = (int) m * p;
-
   // create buffers
   cl_mem a_buf = create_input_buffer_from_arr(a, a_size, status);
   cl_mem b_buf = create_input_buffer_from_arr(b, b_size, status);
   cl_mem out_buf = create_output_buffer(out_size, status);
   // Set the kernel argument (argument 0)
-
   status  =  clSetKernelArg(kernel, 0, sizeof(cl_mem), &a_buf);
   status |=  clSetKernelArg(kernel, 1, sizeof(cl_mem), &b_buf);
   status |=  clSetKernelArg(kernel, 2, sizeof(cl_mem), &out_buf);
@@ -392,7 +257,6 @@ void fastMatMul(float* a, float* b, float* out, int m_, int n_, int p_){
   checkError(status, "Waiting for queue to finish");
   // read buffer to host
   read_out_buffer(out_buf, out, out_size, status);
-
   clReleaseMemObject(a_buf);
   clReleaseMemObject(b_buf);
   clReleaseMemObject(out_buf);
