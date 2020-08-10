@@ -12,7 +12,12 @@ using namespace std::chrono;
 // 465900 microsec on emulator -- create linear kernel
 // 254952 microsec on emulator -- create linear + relu kernel and linear + sigmoid kernel
 // >> this implementation lost precision more significantly than the most recent ones
-// 64071 microsec on fpga -- latest -- 1d, 2d matmul, linear + relu + sigmoid integrated kernel
+// 64071 microsec on fpga -- 1d, 2d matmul, linear + relu + sigmoid integrated kernel
+// 26230 microsec on fpga -- added unrolling
+// 4287288 microsec on fpga -- data_len = 100
+
+// 51009930 microsec on emulator -- data_len = 100
+
 int main(int argc, char **argv)
 {
 	Options options(argc, argv);

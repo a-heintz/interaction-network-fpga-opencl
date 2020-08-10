@@ -13,8 +13,8 @@
 using namespace std;
 using namespace std::chrono;
 
-#define MODEL_FILE    "../data/model_weights.hdf5"
-#define DATA_FILE     "../data/test.hdf5"
+#define MODEL_FILE    "../data/model_weights_LP_5.hdf5"
+#define DATA_FILE     "../data/test_LP_5.hdf5"
 
 int obj_w;
 int obj_h;
@@ -59,9 +59,9 @@ vector<float> OM_BIAS_0(200);
 vector<float> OM_BIAS_2(200);
 vector<float> OM_BIAS_4(3);
 
-int data_len = 10;
-int data_idx_m[100];
-int data_idx_n[100];
+int data_len = 1000;
+int data_idx_m[1000];
+int data_idx_n[1000];
 
 string toString(int &i){
    stringstream ss;

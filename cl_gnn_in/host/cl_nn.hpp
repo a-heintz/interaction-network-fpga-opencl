@@ -62,7 +62,6 @@ void read_out_buffer(cl_mem out_buf, float* out, int size, cl_int status){
   //read_out_buffer(out_buf, a_t, size, status);
   status = clEnqueueReadBuffer(queue, out_buf, CL_TRUE, 0, sizeof(float) * size, out, 0, NULL, NULL);
   checkError(status, "Reading back buffer out_buf");
-
 }
 
 cl_mem create_input_buffer_from_arr(float *inp, int size, cl_int status){

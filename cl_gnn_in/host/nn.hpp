@@ -91,8 +91,9 @@ vector<vector<vector<float>>> forward(vector<vector<vector<float>>> obj,
 	vector<vector<float>> predict;
 	vector<vector<vector<float>>> predicted;
 	int N = data_len;
-	int i = 0;
-	//for(int i = 0; i < N; i++){
+	//int i = 0;
+	for(int i = 0; i < N; i++){
+
 	obj_w = obj[i].size();
 	obj_h = obj[i][0].size();
 	sr_w = sr[i].size();
@@ -157,13 +158,12 @@ vector<vector<vector<float>>> forward(vector<vector<vector<float>>> obj,
 									ri_w, ri_h, sender_arr, receiver_arr, ri_arr, interaction_term_arr);
 	relational_model(interaction_term_arr, pred_arr, term_w, term_h);
 	predict = array2_2dvec(pred_arr, out_w, out_h);
-	//cout << out_w << " " << out_h << "\n";
 	int m = predict.size();
 	predicted.push_back(predict);
-	for (int j = 0; j < m; j++) {
-		cout << predict[j][0] << " \n";
-	}
-
+	//for (int j = 0; j < m; j++) {
+	//	cout << predict[j][0] << " \n";
 	//}
+
+	}
 	return predicted;
 }

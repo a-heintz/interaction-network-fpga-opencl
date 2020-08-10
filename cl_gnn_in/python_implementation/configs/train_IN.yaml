@@ -1,0 +1,11 @@
+model_outdir: /home/jdezoort/GNN_Repo_Reorganization/gnn_track_challenge/interaction_network/trained_models
+plot_outdir: /home/jdezoort/GNN_Repo_Reorganization/gnn_track_challenge/interaction_network/plots
+verbose: 1
+n_epoch: 1500
+batch_size: 10
+prep: 'LP'
+pt_cut: '2'
+save_every_n_epoch: 50
+save_last_n_epoch: 100
+phi_reflect: false
+tag: 'wide_noPhi'
