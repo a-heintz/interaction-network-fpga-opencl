@@ -70,128 +70,15 @@ cl_mem create_input_buffer_from_arr(float *inp, int size, cl_int status){
   return inp_buf;
 }
 
-void transpose(float *inp, float* out, int m, int n)
+
+
+
+
+
+
+void cl_linear(cl_mem a, cl_mem b, cl_mem bias, cl_mem out, int m, int n, int p, char* activation)
 {
-    // get kernel to execute
-    cl_kernel kernel = kernels["transpose"];
-    cl_int status;
-    const ushort m_ = (ushort) m;
-    const ushort n_ = (ushort) n;
-    int size = m * n;
-    // create buffers
-    cl_mem inp_buf = create_input_buffer_from_arr(inp, size, status);
-    cl_mem out_buf = create_output_buffer(size, status);
-    // Set the kernel argument (argument 0)
-    status  =  clSetKernelArg(kernel, 0, sizeof(cl_mem), &out_buf);
-    status |=  clSetKernelArg(kernel, 1, sizeof(cl_mem), &inp_buf);
-    status |=  clSetKernelArg(kernel, 2, sizeof(ushort), &m_);
-    status |=  clSetKernelArg(kernel, 3, sizeof(ushort), &n_);
-    checkError(status, "Setting kernel arguments");
-    // execute kernel
-    const size_t global[2] = {m, n};
-    run_kernel(global, kernel, status);
-
-    // read buffer to host
-    read_out_buffer(out_buf, out, size, status);
-    // clean up -- destroy buffers and free up memory on device
-    clReleaseMemObject(inp_buf);
-    clReleaseMemObject(out_buf);
-}
-
-void interaction_cat(int term_w,
-                     int term_h,
-                     int sender_w,
-                     int sender_h,
-                     int receiver_w,
-                     int receiver_h,
-                     int ri_w,
-                     int ri_h,
-                     float* sender,
-                     float* receiver,
-                     float* ri,
-                     float* out){
-  // get kernel to execute
-  cl_kernel kernel = kernels["interaction_cat"];
   cl_int status;
-  // create buffers
-  int size_sender = sender_w * sender_h;
-  cl_mem sender_buf = create_input_buffer_from_arr(sender, size_sender, status);
-  int size_receiver = receiver_w * receiver_h;
-  cl_mem receiver_buf = create_input_buffer_from_arr(receiver, size_receiver, status);
-  int size_ri = ri_w * ri_h;
-  cl_mem ri_buf = create_input_buffer_from_arr(ri, size_ri, status);
-  int size_out = term_w * term_h;
-  cl_mem out_buf = create_output_buffer(size_out, status);
-  // Set the kernel argument (argument 0)
-  status  =  clSetKernelArg(kernel, 0, sizeof(cl_mem), &sender_buf);
-  status  =  clSetKernelArg(kernel, 1, sizeof(cl_mem), &receiver_buf);
-  status  =  clSetKernelArg(kernel, 2, sizeof(cl_mem), &ri_buf);
-  status  =  clSetKernelArg(kernel, 3, sizeof(cl_mem), &out_buf);
-  status |=  clSetKernelArg(kernel, 4, sizeof(ushort), &term_h);
-  checkError(status, "Setting kernel arguments");
-  // execute kernel
-  ushort t_w = (ushort) term_w;
-  ushort t_h = (ushort) term_h;
-  const size_t global[2] = {term_w, term_h};
-  run_kernel(global, kernel, status);
-  // read buffer to host
-  read_out_buffer(out_buf, out, size_out, status);
-
-  clReleaseMemObject(sender_buf);
-  clReleaseMemObject(receiver_buf);
-  clReleaseMemObject(ri_buf);
-  clReleaseMemObject(out_buf);
-}
-
-void aggregate_cat(float* obj_t,
-                                    float* effect_receiver,
-                                    float* out,
-                                    int obj_t_w,
-                                    int obj_t_h,
-                                    int effect_receiver_w,
-                                    int effect_receiver_h){
-  int term_w = obj_t_w + effect_receiver_w;
-	int term_h = obj_t_h;
-  // get kernel to execute
-  cl_kernel kernel = kernels["aggregate_cat"];
-  cl_int status;
-  // create buffers
-  int size_obj_t = obj_t_w * obj_t_h;
-  cl_mem obj_t_buf = create_input_buffer_from_arr(obj_t, size_obj_t, status);
-  int size_effect_receiver = effect_receiver_w * effect_receiver_h;
-  cl_mem effect_receiver_buf = create_input_buffer_from_arr(effect_receiver, size_effect_receiver, status);
-  int size_out = term_w * term_h;
-  cl_mem out_buf = create_output_buffer(size_out, status);
-  // Set the kernel argument (argument 0)
-  status  =  clSetKernelArg(kernel, 0, sizeof(cl_mem), &obj_t_buf);
-  status |=  clSetKernelArg(kernel, 1, sizeof(cl_mem), &effect_receiver_buf);
-  status |=  clSetKernelArg(kernel, 2, sizeof(cl_mem), &out_buf);
-  status |=  clSetKernelArg(kernel, 3, sizeof(ushort), &term_h);
-  checkError(status, "Setting kernel arguments");
-  // execute kernel
-  ushort t_w = (ushort) term_w;
-  ushort t_h = (ushort) term_h;
-  const size_t global[2] = {term_w, term_h};
-  run_kernel(global, kernel, status);
-  // read buffer to host
-  read_out_buffer(out_buf, out, size_out, status);
-  clReleaseMemObject(obj_t_buf);
-  clReleaseMemObject(effect_receiver_buf);
-  clReleaseMemObject(out_buf);
-}
-
-void cl_linear(float* a, float* b, float* bias, float* out, int m_, int n_, int p_, char* activation){
-  cl_int status;
-  const ushort m = (ushort) m_;
-	const ushort n = (ushort) n_;
-	const ushort p = (ushort) p_;
-  int a_size = (int) m * n;
-  int b_size = (int) n * p;
-  int out_size = (int) m * p;
-  cl_mem a_buf = create_input_buffer_from_arr(a, a_size, status);
-  cl_mem b_buf = create_input_buffer_from_arr(b, b_size, status);
-  int BLOCK_SIZE = 2;
-  // get kernel to execute
   cl_kernel kernel = kernels["linear"];
   int activation_int;
   if(activation == "relu"){
@@ -201,62 +88,82 @@ void cl_linear(float* a, float* b, float* bias, float* out, int m_, int n_, int 
   } else {
     activation_int = 3;
   }
-  cl_mem bias_buf = create_input_buffer_from_arr(bias, p, status);
-  cl_mem out_buf = create_output_buffer(out_size, status);
-  // Set the kernel argument (argument 0)
-  status  =  clSetKernelArg(kernel, 0, sizeof(cl_mem), &a_buf);
-  status |=  clSetKernelArg(kernel, 1, sizeof(cl_mem), &b_buf);
-  status |=  clSetKernelArg(kernel, 2, sizeof(cl_mem), &bias_buf);
-  status |=  clSetKernelArg(kernel, 3, sizeof(cl_mem), &out_buf);
-  status |=  clSetKernelArg(kernel, 4, sizeof(ushort), &m);
-  status |=  clSetKernelArg(kernel, 5, sizeof(ushort), &n);
-  status |=  clSetKernelArg(kernel, 6, sizeof(ushort), &p);
-  status |=  clSetKernelArg(kernel, 7, sizeof(int), &BLOCK_SIZE);
-  status |=  clSetKernelArg(kernel, 8, sizeof(int), &activation_int);
+  status  =  clSetKernelArg(kernel, 0, sizeof(cl_mem), &a);
+  status |=  clSetKernelArg(kernel, 1, sizeof(cl_mem), &b);
+  status |=  clSetKernelArg(kernel, 2, sizeof(cl_mem), &bias);
+  status |=  clSetKernelArg(kernel, 3, sizeof(cl_mem), &out);
+  status |=  clSetKernelArg(kernel, 4, sizeof(int), &m);
+  status |=  clSetKernelArg(kernel, 5, sizeof(int), &n);
+  status |=  clSetKernelArg(kernel, 6, sizeof(int), &p);
+  status |=  clSetKernelArg(kernel, 7, sizeof(int), &activation_int);
   checkError(status, "Setting kernel arguments");
-  size_t local[2] = {BLOCK_SIZE, BLOCK_SIZE};
   size_t global[2] = {m, p};
   status = clEnqueueNDRangeKernel(queue, kernel, 2, NULL, global, NULL, 0, NULL, NULL);
   checkError(status, "Enqueuing kernel");
-  // Wait for command queue to complete pending events
   status = clFinish(queue);
   checkError(status, "Waiting for queue to finish");
-  // read buffer to host
-  read_out_buffer(out_buf, out, out_size, status);
 }
 
-void fastMatMul(float* a, float* b, float* out, int m_, int n_, int p_){
-  // get kernel to execute
+void interaction_cat(int term_w, int term_h, int sender_w, int sender_h, int receiver_w, int receiver_h,
+                     int ri_w, int ri_h, cl_mem sender, cl_mem receiver, cl_mem ri, cl_mem out)
+{
+  cl_kernel kernel = kernels["interaction_cat"];
+  cl_int status;
+  status  =  clSetKernelArg(kernel, 0, sizeof(cl_mem), &sender);
+  status |=  clSetKernelArg(kernel, 1, sizeof(cl_mem), &receiver);
+  status |=  clSetKernelArg(kernel, 2, sizeof(cl_mem), &ri);
+  status |=  clSetKernelArg(kernel, 3, sizeof(cl_mem), &out);
+  status |=  clSetKernelArg(kernel, 4, sizeof(int), &term_h);
+  checkError(status, "Setting kernel arguments");
+  const size_t global[2] = {term_w, term_h};
+  run_kernel(global, kernel, status);
+}
+
+void aggregate_cat(cl_mem obj_t, cl_mem effect_receiver, cl_mem out,
+                   int obj_t_w, int obj_t_h,
+                   int effect_receiver_w, int effect_receiver_h)
+{
+  cl_kernel kernel = kernels["aggregate_cat"];
+  cl_int status;
+  int term_w = obj_t_w + effect_receiver_w;
+	int term_h = obj_t_h;
+  // Set the kernel argument (argument 0)
+  status  =  clSetKernelArg(kernel, 0, sizeof(cl_mem), &obj_t);
+  status |=  clSetKernelArg(kernel, 1, sizeof(cl_mem), &effect_receiver);
+  status |=  clSetKernelArg(kernel, 2, sizeof(cl_mem), &out);
+  status |=  clSetKernelArg(kernel, 3, sizeof(int), &term_h);
+  checkError(status, "Setting kernel arguments");
+  const size_t global[2] = {term_w, term_h};
+  run_kernel(global, kernel, status);
+}
+
+void transpose(cl_mem in, cl_mem out, int m, int n)
+{
+    cl_kernel kernel = kernels["transpose"];
+    cl_int status;
+    status  =  clSetKernelArg(kernel, 0, sizeof(cl_mem), &out);
+    status |=  clSetKernelArg(kernel, 1, sizeof(cl_mem), &in);
+    status |=  clSetKernelArg(kernel, 2, sizeof(int), &m);
+    status |=  clSetKernelArg(kernel, 3, sizeof(int), &n);
+    checkError(status, "Setting kernel arguments");
+    const size_t global[2] = {m, n};
+    run_kernel(global, kernel, status);
+}
+
+void buf_fastMatMul(cl_mem a, cl_mem b, cl_mem out, int m, int n, int p)
+{
   cl_kernel kernel = kernels["matrixMul"];
   cl_int status;
-  const ushort m = (ushort) m_; // a.size();
-	const ushort n = (ushort) n_; // a[0].size();
-	const ushort p = (ushort) p_; // b[0].size();
-  int a_size = (int) m * n;
-  int b_size = (int) n * p;
-  int out_size = (int) m * p;
-  // create buffers
-  cl_mem a_buf = create_input_buffer_from_arr(a, a_size, status);
-  cl_mem b_buf = create_input_buffer_from_arr(b, b_size, status);
-  cl_mem out_buf = create_output_buffer(out_size, status);
-  // Set the kernel argument (argument 0)
-  status  =  clSetKernelArg(kernel, 0, sizeof(cl_mem), &a_buf);
-  status |=  clSetKernelArg(kernel, 1, sizeof(cl_mem), &b_buf);
-  status |=  clSetKernelArg(kernel, 2, sizeof(cl_mem), &out_buf);
-  status |=  clSetKernelArg(kernel, 3, sizeof(ushort), &m);
-  status |=  clSetKernelArg(kernel, 4, sizeof(ushort), &n);
-  status |=  clSetKernelArg(kernel, 5, sizeof(ushort), &p);
+  status  =  clSetKernelArg(kernel, 0, sizeof(cl_mem), &a);
+  status |=  clSetKernelArg(kernel, 1, sizeof(cl_mem), &b);
+  status |=  clSetKernelArg(kernel, 2, sizeof(cl_mem), &out);
+  status |=  clSetKernelArg(kernel, 3, sizeof(int), &m);
+  status |=  clSetKernelArg(kernel, 4, sizeof(int), &n);
+  status |=  clSetKernelArg(kernel, 5, sizeof(int), &p);
   checkError(status, "Setting kernel arguments");
-  // execute kernel
   const size_t global[2] = {m, p};
   status = clEnqueueNDRangeKernel(queue, kernel, 2, NULL, global, NULL, 0, NULL, NULL);
   checkError(status, "Enqueuing kernel");
-  // Wait for command queue to complete pending events
   status = clFinish(queue);
   checkError(status, "Waiting for queue to finish");
-  // read buffer to host
-  read_out_buffer(out_buf, out, out_size, status);
-  clReleaseMemObject(a_buf);
-  clReleaseMemObject(b_buf);
-  clReleaseMemObject(out_buf);
 }

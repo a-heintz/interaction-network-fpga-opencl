@@ -58,11 +58,17 @@ void initializeOpenCLParameters(){
     checkErr(err, "Failed to build program");
 
     createKernel("matrixMul");
+    //createKernel("swi_matrixMul");
     createKernel("linear");
+    //createKernel("swi_linear");
     createKernel("transpose");
-    createKernel("pad");
+    //createKernel("swi_transpose");
+    //createKernel("pad");
     createKernel("interaction_cat");
+    //createKernel("swi_interaction_cat");
     createKernel("aggregate_cat");
+    //createKernel("swi_aggregate_cat");
+    //createKernel("single_work_item_IN");
 }
 
 void cleanup() {

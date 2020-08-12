@@ -43,25 +43,63 @@ int pred_h;
 int out_w;
 int out_h;
 
-vector<vector<float>> RM_WEIGHT_0(7, vector<float>(250));
-vector<vector<float>> RM_WEIGHT_2(250, vector<float>(250));
-vector<vector<float>> RM_WEIGHT_4(250, vector<float>(250));
-vector<vector<float>> RM_WEIGHT_6(250, vector<float>(1));
-vector<vector<float>> OM_WEIGHT_0(4, vector<float>(200));
-vector<vector<float>> OM_WEIGHT_2(200, vector<float>(200));
-vector<vector<float>> OM_WEIGHT_4(200, vector<float>(3));
+vector<vector<float>> RM_WEIGHT_0_VEC(7, vector<float>(250));
+vector<vector<float>> RM_WEIGHT_2_VEC(250, vector<float>(250));
+vector<vector<float>> RM_WEIGHT_4_VEC(250, vector<float>(250));
+vector<vector<float>> RM_WEIGHT_6_VEC(250, vector<float>(1));
+vector<vector<float>> OM_WEIGHT_0_VEC(4, vector<float>(200));
+vector<vector<float>> OM_WEIGHT_2_VEC(200, vector<float>(200));
+vector<vector<float>> OM_WEIGHT_4_VEC(200, vector<float>(3));
 
-vector<float> RM_BIAS_0(250);
-vector<float> RM_BIAS_2(250);
-vector<float> RM_BIAS_4(250);
-vector<float> RM_BIAS_6(1);
-vector<float> OM_BIAS_0(200);
-vector<float> OM_BIAS_2(200);
-vector<float> OM_BIAS_4(3);
+vector<float> RM_BIAS_0_VEC(250);
+vector<float> RM_BIAS_2_VEC(250);
+vector<float> RM_BIAS_4_VEC(250);
+vector<float> RM_BIAS_6_VEC(1);
+vector<float> OM_BIAS_0_VEC(200);
+vector<float> OM_BIAS_2_VEC(200);
+vector<float> OM_BIAS_4_VEC(3);
 
-int data_len = 1000;
+float RM_WEIGHT_0[7*250];
+float RM_WEIGHT_2[250*250];
+float RM_WEIGHT_4[250*250];
+float RM_WEIGHT_6[250*1];
+float OM_WEIGHT_0[4*200];
+float OM_WEIGHT_2[200*200];
+float OM_WEIGHT_4[200*3];
+float RM_BIAS_0[250];
+float RM_BIAS_2[250];
+float RM_BIAS_4[250];
+float RM_BIAS_6[1];
+float OM_BIAS_0[200];
+float OM_BIAS_2[200];
+float OM_BIAS_4[3];
+
+int data_len = 100;
 int data_idx_m[1000];
 int data_idx_n[1000];
+
+vector<float> flatten(const vector<vector<float>> &orig)
+{
+    vector<float> ret;
+    for(const auto &v: orig)
+        ret.insert(ret.end(), v.begin(), v.end());
+    return ret;
+}
+
+void flatten2dvec2array(vector<vector<float>> inp, float *inp_arr){
+	vector<float> flat_inp = flatten(inp);
+	int size = flat_inp.size();
+	for (int i = 0; i < size; i++) {
+		inp_arr[i] = flat_inp[i];
+  }
+}
+
+void flatten1dvec2array(vector<float> inp, float *inp_arr){
+	int size = inp.size();
+	for (int i = 0; i < size; i++) {
+		inp_arr[i] = inp[i];
+  }
+}
 
 string toString(int &i){
    stringstream ss;
@@ -99,24 +137,39 @@ vector<float> readH5_2_vec_1d(vector<float> vec, const char* str, hid_t model_fi
 void load_model() {
 	const hid_t model_file = H5Fopen(MODEL_FILE, H5F_ACC_RDONLY, H5P_DEFAULT);
 
-	RM_WEIGHT_0 = readH5_2_vec_2d(RM_WEIGHT_0, "relational_model.layers.0.weight", model_file);
-	RM_WEIGHT_2 = readH5_2_vec_2d(RM_WEIGHT_2, "relational_model.layers.2.weight", model_file);
-	RM_WEIGHT_4 = readH5_2_vec_2d(RM_WEIGHT_4, "relational_model.layers.4.weight", model_file);
-	RM_WEIGHT_6 = readH5_2_vec_2d(RM_WEIGHT_6, "relational_model.layers.6.weight", model_file);
+	RM_WEIGHT_0_VEC = readH5_2_vec_2d(RM_WEIGHT_0_VEC, "relational_model.layers.0.weight", model_file);
+	RM_WEIGHT_2_VEC = readH5_2_vec_2d(RM_WEIGHT_2_VEC, "relational_model.layers.2.weight", model_file);
+	RM_WEIGHT_4_VEC = readH5_2_vec_2d(RM_WEIGHT_4_VEC, "relational_model.layers.4.weight", model_file);
+	RM_WEIGHT_6_VEC = readH5_2_vec_2d(RM_WEIGHT_6_VEC, "relational_model.layers.6.weight", model_file);
 
-	OM_WEIGHT_0 = readH5_2_vec_2d(OM_WEIGHT_0, "object_model.layers.0.weight", model_file);
-	OM_WEIGHT_2 = readH5_2_vec_2d(OM_WEIGHT_2, "object_model.layers.2.weight", model_file);
-	OM_WEIGHT_4 = readH5_2_vec_2d(OM_WEIGHT_4, "object_model.layers.4.weight", model_file);
+	OM_WEIGHT_0_VEC = readH5_2_vec_2d(OM_WEIGHT_0_VEC, "object_model.layers.0.weight", model_file);
+	OM_WEIGHT_2_VEC = readH5_2_vec_2d(OM_WEIGHT_2_VEC, "object_model.layers.2.weight", model_file);
+	OM_WEIGHT_4_VEC = readH5_2_vec_2d(OM_WEIGHT_4_VEC, "object_model.layers.4.weight", model_file);
 
-	RM_BIAS_0 = readH5_2_vec_1d(RM_BIAS_0, "relational_model.layers.0.bias", model_file);
-	RM_BIAS_2 = readH5_2_vec_1d(RM_BIAS_2, "relational_model.layers.2.bias", model_file);
-	RM_BIAS_4 = readH5_2_vec_1d(RM_BIAS_4, "relational_model.layers.4.bias", model_file);
-	RM_BIAS_6 = readH5_2_vec_1d(RM_BIAS_6, "relational_model.layers.6.bias", model_file);
-	OM_BIAS_0 = readH5_2_vec_1d(OM_BIAS_0, "object_model.layers.0.bias", model_file);
-	OM_BIAS_2 = readH5_2_vec_1d(OM_BIAS_2, "object_model.layers.2.bias", model_file);
-	OM_BIAS_4 = readH5_2_vec_1d(OM_BIAS_4, "object_model.layers.4.bias", model_file);
+	RM_BIAS_0_VEC = readH5_2_vec_1d(RM_BIAS_0_VEC, "relational_model.layers.0.bias", model_file);
+	RM_BIAS_2_VEC = readH5_2_vec_1d(RM_BIAS_2_VEC, "relational_model.layers.2.bias", model_file);
+	RM_BIAS_4_VEC = readH5_2_vec_1d(RM_BIAS_4_VEC, "relational_model.layers.4.bias", model_file);
+	RM_BIAS_6_VEC = readH5_2_vec_1d(RM_BIAS_6_VEC, "relational_model.layers.6.bias", model_file);
+	OM_BIAS_0_VEC = readH5_2_vec_1d(OM_BIAS_0_VEC, "object_model.layers.0.bias", model_file);
+	OM_BIAS_2_VEC = readH5_2_vec_1d(OM_BIAS_2_VEC, "object_model.layers.2.bias", model_file);
+	OM_BIAS_4_VEC = readH5_2_vec_1d(OM_BIAS_4_VEC, "object_model.layers.4.bias", model_file);
 
 	H5Fclose(model_file);
+
+  flatten2dvec2array(RM_WEIGHT_0_VEC, RM_WEIGHT_0);
+	flatten2dvec2array(RM_WEIGHT_2_VEC, RM_WEIGHT_2);
+	flatten2dvec2array(RM_WEIGHT_4_VEC, RM_WEIGHT_4);
+	flatten2dvec2array(RM_WEIGHT_6_VEC, RM_WEIGHT_6);
+	flatten2dvec2array(OM_WEIGHT_0_VEC, OM_WEIGHT_0);
+	flatten2dvec2array(OM_WEIGHT_2_VEC, OM_WEIGHT_2);
+	flatten2dvec2array(OM_WEIGHT_4_VEC, OM_WEIGHT_4);
+	flatten1dvec2array(RM_BIAS_0_VEC, RM_BIAS_0);
+	flatten1dvec2array(RM_BIAS_2_VEC, RM_BIAS_2);
+	flatten1dvec2array(RM_BIAS_4_VEC, RM_BIAS_4);
+	flatten1dvec2array(RM_BIAS_6_VEC, RM_BIAS_6);
+	flatten1dvec2array(OM_BIAS_0_VEC, OM_BIAS_0);
+	flatten1dvec2array(OM_BIAS_2_VEC, OM_BIAS_2);
+	flatten1dvec2array(OM_BIAS_4_VEC, OM_BIAS_4);
 }
 
 vector<vector<vector<float>>> load_data(hid_t data_file, string sec, int data_len)

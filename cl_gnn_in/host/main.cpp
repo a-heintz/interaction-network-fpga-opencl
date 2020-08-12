@@ -13,10 +13,13 @@ using namespace std::chrono;
 // 254952 microsec on emulator -- create linear + relu kernel and linear + sigmoid kernel
 // >> this implementation lost precision more significantly than the most recent ones
 // 64071 microsec on fpga -- 1d, 2d matmul, linear + relu + sigmoid integrated kernel
+
 // 26230 microsec on fpga -- added unrolling
+
 // 4287288 microsec on fpga -- data_len = 100
 
 // 51009930 microsec on emulator -- data_len = 100
+// 85884402 microsec on fpga -- data_len = 1000
 
 int main(int argc, char **argv)
 {
@@ -36,7 +39,7 @@ int main(int argc, char **argv)
 	load_model();
 	// forward operation
 	auto start = high_resolution_clock::now();
-	vector<vector<vector<float>>> predicted = forward(obj, sr, rr, ri);
+	vector<vector<vector<float>>> predicted = ndr_forward(obj, sr, rr, ri);
 	auto stop = high_resolution_clock::now();
 	auto duration = duration_cast<microseconds>(stop - start);
 	cout << "Time taken by function: "
