@@ -1,0 +1,12 @@
+model_outdir: /tigress/aheintz/data/trained_models
+plot_outdir: /tigress/aheintz/data/plots
+verbose: 0
+n_epoch: 500
+batch_size: 10
+prep: 'LP'
+pt_cut: '5'
+save_every_n_epoch: 50
+save_last_n_epoch: 100
+phi_reflect: false
+tag: 'wide_noPhi'
+graph_dir: "/tigress/jdezoort/for_aneesh/IN_LP_5/"
