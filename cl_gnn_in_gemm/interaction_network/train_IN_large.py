@@ -102,11 +102,12 @@ train_size, test_size = 800, 200
 if (phi_reflect): train_size, test_size = 1600, 200
 
 n_batch = int(float(train_size)/batch_size)
+test_batch = int(float(test_size)/batch_size)
 if (verbose): print(" ... batch_size={0}".format(batch_size))
 
 # prepare test graphs
-test_O, test_Rs, test_Rr, test_Ra, test_y = get_inputs(graphs[train_size:])
-if (verbose): print(" ... train_size={0}, test_size={1}".format(train_size, len(test_y)))
+#test_O, test_Rs, test_Rr, test_Ra, test_y = get_inputs(graphs[train_size:])
+#if (verbose): print(" ... train_size={0}, test_size={1}".format(train_size, len(test_y)))
 
 save_epochs = np.arange(0, n_epoch, save_every)
 if (verbose):
@@ -115,6 +116,7 @@ if (verbose):
 
 test_losses, train_losses, batch_losses = [], [], []
 for epoch in range(n_epoch):
+    interaction_network.train()
     start_time = time.time()
     epoch_loss = 0.0
     batch_losses = []
@@ -135,11 +137,23 @@ for epoch in range(n_epoch):
 
     end_time = time.time()
     train_losses.append(epoch_loss/n_batch)
-    predicted = interaction_network(test_O, test_Rs, test_Rr, test_Ra)
-    loss = criterion(torch.cat(predicted, dim=0), torch.cat(test_y, dim=0))
-    test_losses.append(loss.item())
+    # test
+    interaction_network.eval()
+    test_loss = 0
+    for b in range(test_batch):
+        rand_idx = [random.randint(train_size, train_size + test_size - 1)
+                    for _ in range(batch_size)]
+        batch = get_graphs(graph_dir, rand_idx)
+        #batch = [graphs[i] for i in rand_idx]
+        O, Rs, Rr, Ra, y = get_inputs(batch)
+        predicted = interaction_network(O, Rs, Rr, Ra)
+        batch_loss = criterion(torch.cat(predicted, dim=0),
+                               torch.cat(y, dim=0))
+        test_loss += batch_loss.item()
+    test_loss /= test_batch
+    test_losses.append(test_loss)
     print(" * Epoch {0}: time={1:2.2f}s, test_loss={2:0.3f}, train_loss={2:0.3f}"
-          .format(epoch, end_time-start_time, loss.item(), epoch_loss/n_batch))
+          .format(epoch, end_time-start_time, test_loss, epoch_loss/n_batch))
 
 
     if (epoch in save_epochs) or (epoch  > n_epoch - save_last):
