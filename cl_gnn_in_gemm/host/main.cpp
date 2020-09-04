@@ -35,6 +35,12 @@ using namespace std::chrono;
 // 22585 microsec -- ndr fpga -- data_len = 1 -- added padding & GEMM to linear
 // 25306 microsec -- ndr fpga -- data_len = 1 -- old
 
+
+// ------ emulator runtime breakdown -------
+// Total (microsecs): 91117
+//FPGA (microsecs): 79481.603
+//CPU (microsecs): 1572
+
 int main(int argc, char** argv)
 {
 		MODEL_FILE = argv[1];
@@ -59,22 +65,15 @@ int main(int argc, char** argv)
 
 		cl_int status;
 		// forward operation
+		float elapsed_time = 0;
 		auto start = high_resolution_clock::now();
-		vector<vector<vector<dtype>>> predicted = ndr_forward(obj, sr, rr, ri);
+		vector<vector<vector<dtype>>> predicted = ndr_forward(obj, sr, rr, ri, &elapsed_time);
 		auto stop = high_resolution_clock::now();
 		auto duration = duration_cast<microseconds>(stop - start);
-		cout << "Time taken by function NDRange: "
+		cout << "Time taken by device: Total -- (per event) == "
 		     << duration.count() << " microsecs \n";
-
-
-		//start = high_resolution_clock::now();
-		//predicted = ndr_forward(obj, sr, rr, ri);
-		//stop = high_resolution_clock::now();
-		//duration = duration_cast<microseconds>(stop - start);
-		//cout << "Time taken by function NDRange: "
-		//		<< duration.count() << " microsecs \n";
-
-
+		cout << "Time taken by device: FPGA  -- (per event) == "
+			     << elapsed_time << " microsecs \n";
 
 		// cleanup
 		cleanup();

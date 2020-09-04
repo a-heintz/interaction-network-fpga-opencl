@@ -77,8 +77,9 @@ cl_mem create_input_buffer_from_arr(dtype *inp, int size, cl_int status){
   return inp_buf;
 }
 
-void linear(cl_command_queue queue, cl_mem a, cl_mem b, cl_mem bias, cl_mem out, int m, int n, int p, char* activation)
+float linear(cl_command_queue queue, cl_mem a, cl_mem b, cl_mem bias, cl_mem out, int m, int n, int p, char* activation)
 {
+  auto start = high_resolution_clock::now();
   cl_int status;
   cl_kernel kernel = kernels["linear"];
   int activation_int;
@@ -107,6 +108,10 @@ void linear(cl_command_queue queue, cl_mem a, cl_mem b, cl_mem bias, cl_mem out,
   const size_t global[2] = {m_pad / WPT, p_pad / WPT};
   const size_t local[2] = {BLOCK_SIZE / WPT, BLOCK_SIZE / WPT};
   cl_event event;
+  auto stop = high_resolution_clock::now();
+	auto duration = duration_cast<microseconds>(stop - start);
+	//cout << ">> Time taken CPU Overhead: "
+	//		 << duration.count() << " microsecs \n";
   status = clEnqueueNDRangeKernel(queue, kernel, 2, NULL, global, local, 0, NULL, &event);
   checkError(status, "Enqueuing kernel");
   clWaitForEvents(1, &event);
@@ -118,13 +123,15 @@ void linear(cl_command_queue queue, cl_mem a, cl_mem b, cl_mem bias, cl_mem out,
   clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof(time_start), &time_start, NULL);
   clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(time_end), &time_end, NULL);
 
-  double nanoSeconds = time_end-time_start;
-  cout << "linear: OpenCl Execution time is: "<< nanoSeconds / 1000.0 <<" microseconds" << "\n";
+  float nanoSeconds = time_end-time_start;
+  //cout << "linear: OpenCl Execution time is: "<< nanoSeconds / 1000.0 <<" microseconds" << "\n";
+  return nanoSeconds;
 }
 
-void interaction_cat(cl_command_queue queue, int term_w, int term_h, int sender_w, int sender_h, int receiver_w, int receiver_h,
+float interaction_cat(cl_command_queue queue, int term_w, int term_h, int sender_w, int sender_h, int receiver_w, int receiver_h,
                      int ri_w, int ri_h, cl_mem sender, cl_mem receiver, cl_mem ri, cl_mem out)
 {
+  auto start = high_resolution_clock::now();
   cl_kernel kernel = kernels["interaction_cat"];
   cl_int status;
   status  =  clSetKernelArg(kernel, 0, sizeof(cl_mem), &sender);
@@ -135,6 +142,10 @@ void interaction_cat(cl_command_queue queue, int term_w, int term_h, int sender_
   checkError(status, "Setting kernel arguments");
   const size_t global[2] = {term_w, term_h};
   cl_event event;
+  auto stop = high_resolution_clock::now();
+	auto duration = duration_cast<microseconds>(stop - start);
+	//cout << ">> Time taken CPU Overhead: "
+	//		 << duration.count() << " microsecs \n";
   status = clEnqueueNDRangeKernel(queue, kernel, 2, NULL, global, NULL, 0, NULL, &event);
   checkError(status, "Enqueuing kernel");
   clWaitForEvents(1, &event);
@@ -145,15 +156,17 @@ void interaction_cat(cl_command_queue queue, int term_w, int term_h, int sender_
   clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof(time_start), &time_start, NULL);
   clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(time_end), &time_end, NULL);
 
-  double nanoSeconds = time_end-time_start;
-  cout << "interaction_cat: OpenCl Execution time is: "<< nanoSeconds / 1000.0 <<" microseconds" << "\n";
+  float nanoSeconds = time_end-time_start;
+  //cout << "interaction_cat: OpenCl Execution time is: "<< nanoSeconds / 1000.0 <<" microseconds" << "\n";
   checkError(status, "Waiting for queue to finish");
+  return nanoSeconds;
 }
 
-void aggregate_cat(cl_command_queue queue, cl_mem obj_t, cl_mem effect_receiver, cl_mem out,
+float aggregate_cat(cl_command_queue queue, cl_mem obj_t, cl_mem effect_receiver, cl_mem out,
                    int obj_t_w, int obj_t_h,
                    int effect_receiver_w, int effect_receiver_h)
 {
+  auto start = high_resolution_clock::now();
   cl_kernel kernel = kernels["aggregate_cat"];
   cl_int status;
   int term_w = obj_t_w + effect_receiver_w;
@@ -166,6 +179,10 @@ void aggregate_cat(cl_command_queue queue, cl_mem obj_t, cl_mem effect_receiver,
   checkError(status, "Setting kernel arguments");
   const size_t global[2] = {term_w, term_h};
   cl_event event;
+  auto stop = high_resolution_clock::now();
+	auto duration = duration_cast<microseconds>(stop - start);
+	//cout << ">> Time taken CPU Overhead: "
+	//		 << duration.count() << " microsecs \n";
   status = clEnqueueNDRangeKernel(queue, kernel, 2, NULL, global, NULL, 0, NULL, &event);
   checkError(status, "Enqueuing kernel");
   clWaitForEvents(1, &event);
@@ -176,13 +193,15 @@ void aggregate_cat(cl_command_queue queue, cl_mem obj_t, cl_mem effect_receiver,
   clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof(time_start), &time_start, NULL);
   clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(time_end), &time_end, NULL);
 
-  double nanoSeconds = time_end-time_start;
-  cout << "aggregate_cat: OpenCl Execution time is: "<< nanoSeconds / 1000.0 <<" microseconds" << "\n";
+  float nanoSeconds = time_end-time_start;
+  //cout << "aggregate_cat: OpenCl Execution time is: "<< nanoSeconds / 1000.0 <<" microseconds" << "\n";
   checkError(status, "Waiting for queue to finish");
+  return nanoSeconds;
 }
 
-void transpose(cl_command_queue queue, cl_mem in, cl_mem out, int m, int n)
+float transpose(cl_command_queue queue, cl_mem in, cl_mem out, int m, int n)
 {
+    auto start = high_resolution_clock::now();
     cl_kernel kernel = kernels["transpose"];
     cl_int status;
     status  =  clSetKernelArg(kernel, 0, sizeof(cl_mem), &out);
@@ -193,6 +212,10 @@ void transpose(cl_command_queue queue, cl_mem in, cl_mem out, int m, int n)
     const size_t global[2] = {m, n};
 
     cl_event event;
+    auto stop = high_resolution_clock::now();
+  	auto duration = duration_cast<microseconds>(stop - start);
+  	//cout << ">> Time taken CPU Overhead: "
+  	//		 << duration.count() << " microsecs \n";
     status = clEnqueueNDRangeKernel(queue, kernel, 2, NULL, global, NULL, 0, NULL, &event);
     checkError(status, "Enqueuing kernel");
     clWaitForEvents(1, &event);
@@ -203,13 +226,15 @@ void transpose(cl_command_queue queue, cl_mem in, cl_mem out, int m, int n)
     clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof(time_start), &time_start, NULL);
     clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(time_end), &time_end, NULL);
 
-    double nanoSeconds = time_end-time_start;
-    cout << "transpose: OpenCl Execution time is: "<< nanoSeconds / 1000.0 <<" microseconds" << "\n";
+    float nanoSeconds = time_end-time_start;
+    //cout << "transpose: OpenCl Execution time is: "<< nanoSeconds / 1000.0 <<" microseconds" << "\n";
     checkError(status, "Waiting for queue to finish");
+    return nanoSeconds;
 }
 
-void buf_fastMatMul(cl_command_queue queue, cl_mem a, cl_mem b, cl_mem out, int m, int n, int p)
+float buf_fastMatMul(cl_command_queue queue, cl_mem a, cl_mem b, cl_mem out, int m, int n, int p)
 {
+  auto start = high_resolution_clock::now();
   cl_kernel kernel = kernels["GEMM"];
   cl_int status;
   int m_pad = RoundUp(m, BLOCK_SIZE);
@@ -228,6 +253,10 @@ void buf_fastMatMul(cl_command_queue queue, cl_mem a, cl_mem b, cl_mem out, int 
   const size_t global[2] = {m_pad / WPT, p_pad / WPT};
   const size_t local[2] = {BLOCK_SIZE / WPT, BLOCK_SIZE / WPT};
   cl_event event;
+  auto stop = high_resolution_clock::now();
+	auto duration = duration_cast<microseconds>(stop - start);
+	//cout << ">> Time taken CPU Overhead: "
+	//		 << duration.count() << " microsecs \n";
   status = clEnqueueNDRangeKernel(queue, kernel, 2, NULL, global, local, 0, NULL, &event);
   checkError(status, "Enqueuing kernel");
   clWaitForEvents(1, &event);
@@ -240,6 +269,8 @@ void buf_fastMatMul(cl_command_queue queue, cl_mem a, cl_mem b, cl_mem out, int 
   clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof(time_start), &time_start, NULL);
   clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(time_end), &time_end, NULL);
 
-  double nanoSeconds = time_end-time_start;
-  cout << "buf_fastMatMul: OpenCl Execution time is: "<< nanoSeconds / 1000.0 <<" microseconds" << "\n";
+  float nanoSeconds = time_end-time_start;
+  //cout << "buf_fastMatMul: OpenCl Execution time is: "<< nanoSeconds / 1000.0 <<" microseconds" << "\n";
+
+  return nanoSeconds;
 }

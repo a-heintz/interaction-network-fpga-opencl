@@ -32,8 +32,8 @@ job_name = "{0}_{1}_{2}_{3}".format(prep, pt_cut, n_epoch, tag)
 model_path = '{}/{}_epoch0.pt'.format(model_outdir, job_name)
 
 graphs = get_graphs(graph_dir)
-#print(len(graphs))
-#objects, sender_relations, receiver_relations, relation_info, y = get_inputs(graphs)
+print(len(graphs))
+objects, sender_relations, receiver_relations, relation_info, y = get_inputs(graphs)
 
 weights = torch.load(model_path)
 # In[2]:

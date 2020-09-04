@@ -6,9 +6,90 @@
 #define RELU(inp) (inp > 0 ? inp : 0)
 #define global_idx(x_idx, y_idx, m) (x_idx * m + y_idx)
 #define BLOCK_SIZE 32
-#define WPT 8
+#define WPT 4
 #define RBLOCK_SIZE (BLOCK_SIZE/WPT)
 
+void GEMM_helper(
+      __global dtype* restrict A,
+      __global dtype* restrict B,
+      __global dtype* restrict C,
+      __const int M,
+      __const int N,
+      __const int P,
+      __const int M_,
+      __const int N_,
+      __const int P_,
+      __local float* restrict A_local,
+      __local float* restrict B_local)
+{
+
+    const int row = get_local_id(0);
+    const int col = get_local_id(1);
+    const int m = BLOCK_SIZE*get_group_id(0) + row;
+    const int p = BLOCK_SIZE*get_group_id(1) + col;
+
+    float Areg;
+    float Breg[WPT];
+    float acc[WPT][WPT];
+    #pragma unroll WPT
+    for(int wm=0; wm<WPT; wm++){
+        #pragma unroll WPT
+        for(int wn=0; wn<WPT; wn++){
+            acc[wm][wn] = 0.0f;
+        }
+    }
+    const int numTiles = N_/BLOCK_SIZE;
+    for (int t=0; t<numTiles; t++) {
+        #pragma unroll WPT
+        for (int wm=0; wm<WPT; wm++){
+            #pragma unroll WPT
+            for (int wn=0; wn<WPT; wn++){
+                const int r = BLOCK_SIZE*t + row;
+                const int c = BLOCK_SIZE*t + col;
+                if(((m + wm*RBLOCK_SIZE) < M) && ((c + wn*RBLOCK_SIZE) < N)){
+                    A_local[(row + wm*RBLOCK_SIZE)*BLOCK_SIZE + (col + wn*RBLOCK_SIZE)] = A[(m + wm*RBLOCK_SIZE)*N + (c + wn*RBLOCK_SIZE)];
+                } else {
+                    A_local[(row + wm*RBLOCK_SIZE)*BLOCK_SIZE + (col + wn*RBLOCK_SIZE)] = 0.0;
+                }
+
+                if(((p + wn*RBLOCK_SIZE) < P) && ((r + wm*RBLOCK_SIZE) < N)){
+                    B_local[(row + wm*RBLOCK_SIZE)*BLOCK_SIZE + (col + wn*RBLOCK_SIZE)] = B[(r + wm*RBLOCK_SIZE)*P + (p + wn*RBLOCK_SIZE)];
+                } else {
+                    B_local[(row + wm*RBLOCK_SIZE)*BLOCK_SIZE + (col + wn*RBLOCK_SIZE)] = 0.0;
+                }
+            }
+        }
+        barrier(CLK_LOCAL_MEM_FENCE);
+        #pragma unroll BLOCK_SIZE
+        for (int k=0; k<BLOCK_SIZE; k++){
+            #pragma unroll WPT
+            for (int wn=0; wn<WPT; wn++){
+                Breg[wn] = B_local[k*BLOCK_SIZE + (col + wn*RBLOCK_SIZE)];
+            }
+            #pragma unroll WPT
+            for (int wm=0; wm<WPT; wm++){
+                Areg = A_local[(row + wm*RBLOCK_SIZE)*BLOCK_SIZE + k];
+                #pragma unroll WPT
+                for (int wn=0; wn<WPT; wn++){
+                    acc[wm][wn] += Areg * Breg[wn];
+                }
+            }
+        }
+        barrier(CLK_LOCAL_MEM_FENCE);
+    }
+    for (int wm=0; wm<WPT; wm++){
+        #pragma unroll WPT
+        for (int wn=0; wn<WPT; wn++){
+            if(((m + wm*RBLOCK_SIZE) < M) && ((p + wn*RBLOCK_SIZE) < P)){
+                C[(m + wm*RBLOCK_SIZE)*P + (p + wn*RBLOCK_SIZE)] = acc[wm][wn];
+            }
+
+        }
+    }
+}
+
+
+// create a helper gemm class where i pass the local blocks in
 __kernel __attribute__((reqd_work_group_size(RBLOCK_SIZE, RBLOCK_SIZE, 1)))
 void GEMM(
       __global dtype* restrict A,
@@ -21,67 +102,11 @@ void GEMM(
       __const int N_,
       __const int P_)
 {
-    const int row = get_local_id(0);
-    const int col = get_local_id(1);
-    const int m = BLOCK_SIZE*get_group_id(0) + row;
-    const int p = BLOCK_SIZE*get_group_id(1) + col;
-    __local float A_local[BLOCK_SIZE][BLOCK_SIZE];
-    __local float B_local[BLOCK_SIZE][BLOCK_SIZE];
-
-    float Areg;
-    float Breg[WPT];
-    float acc[WPT][WPT];
-    for(int wm=0; wm<WPT; wm++){
-        for(int wn=0; wn<WPT; wn++){
-            acc[wm][wn] = 0.0f;
-        }
-    }
-    const int numTiles = N_/BLOCK_SIZE;
-    #pragma unroll
-    for (int t=0; t<numTiles; t++) {
-        for (int wm=0; wm<WPT; wm++){
-            for (int wn=0; wn<WPT; wn++){
-                const int r = BLOCK_SIZE*t + row;
-                const int c = BLOCK_SIZE*t + col;
-                if(((m + wm*RBLOCK_SIZE) < M) && ((c + wn*RBLOCK_SIZE) < N)){
-                    A_local[row + wm*RBLOCK_SIZE][col + wn*RBLOCK_SIZE] = A[(m + wm*RBLOCK_SIZE)*N + (c + wn*RBLOCK_SIZE)];
-                } else {
-                    A_local[row + wm*RBLOCK_SIZE][col + wn*RBLOCK_SIZE] = 0.0;
-                }
-
-                if(((p + wn*RBLOCK_SIZE) < P) && ((r + wm*RBLOCK_SIZE) < N)){
-                    B_local[row + wm*RBLOCK_SIZE][col + wn*RBLOCK_SIZE] = B[(r + wm*RBLOCK_SIZE)*P + (p + wn*RBLOCK_SIZE)];
-                } else {
-                    B_local[row + wm*RBLOCK_SIZE][col + wn*RBLOCK_SIZE] = 0.0;
-                }
-            }
-        }
-        barrier(CLK_LOCAL_MEM_FENCE);
-        #pragma unroll BLOCK_SIZE
-        for (int k=0; k<BLOCK_SIZE; k++){
-            for (int wn=0; wn<WPT; wn++){
-                Breg[wn] = B_local[k][col + wn*RBLOCK_SIZE];
-            }
-            for (int wm=0; wm<WPT; wm++){
-                Areg = A_local[row + wm*RBLOCK_SIZE][k];
-                for (int wn=0; wn<WPT; wn++){
-                    acc[wm][wn] += Areg * Breg[wn];
-                }
-            }
-        }
-        barrier(CLK_LOCAL_MEM_FENCE);
-    }
-    for (int wm=0; wm<WPT; wm++){
-        for (int wn=0; wn<WPT; wn++){
-            if(((m + wm*RBLOCK_SIZE) < M) && ((p + wn*RBLOCK_SIZE) < P)){
-                C[(m + wm*RBLOCK_SIZE)*P + (p + wn*RBLOCK_SIZE)] = acc[wm][wn];
-            }
-
-        }
-    }
+    __local float A_local[BLOCK_SIZE*BLOCK_SIZE];
+    __local float B_local[BLOCK_SIZE*BLOCK_SIZE];
+    GEMM_helper(A, B, C, M, N, P, M_, N_, P_, A_local, B_local);
 }
 
-__attribute__((num_simd_work_items(8)))
 __attribute__((uses_global_work_offset(0)))
 __attribute__((reqd_work_group_size(RBLOCK_SIZE, RBLOCK_SIZE, 1)))
 __kernel void linear(
@@ -97,61 +122,18 @@ __kernel void linear(
       __const int P_,
       __const int activation){
 
+        __local float A_local[BLOCK_SIZE*BLOCK_SIZE];
+        __local float B_local[BLOCK_SIZE*BLOCK_SIZE];
+        GEMM_helper(A, B, C, M, N, P, M_, N_, P_, A_local, B_local);
+
         const int row = get_local_id(0);
         const int col = get_local_id(1);
         const int m = BLOCK_SIZE*get_group_id(0) + row;
         const int p = BLOCK_SIZE*get_group_id(1) + col;
-        __local float A_local[BLOCK_SIZE][BLOCK_SIZE];
-        __local float B_local[BLOCK_SIZE][BLOCK_SIZE];
 
-        float Areg;
-        float Breg[WPT];
-        float acc[WPT][WPT];
-        for(int wm=0; wm<WPT; wm++){
-            for(int wn=0; wn<WPT; wn++){
-                acc[wm][wn] = 0.0f;
-            }
-        }
-        const int numTiles = N_/BLOCK_SIZE;
-        #pragma unroll
-        for (int t=0; t<numTiles; t++) {
-            for (int wm=0; wm<WPT; wm++){
-                for (int wn=0; wn<WPT; wn++){
-                    const int r = BLOCK_SIZE*t + row;
-                    const int c = BLOCK_SIZE*t + col;
-                    if(((m + wm*RBLOCK_SIZE) < M) && ((c + wn*RBLOCK_SIZE) < N)){
-                        A_local[row + wm*RBLOCK_SIZE][col + wn*RBLOCK_SIZE] = A[(m + wm*RBLOCK_SIZE)*N + (c + wn*RBLOCK_SIZE)];
-                    } else {
-                        A_local[row + wm*RBLOCK_SIZE][col + wn*RBLOCK_SIZE] = 0.0;
-                    }
-
-                    if(((p + wn*RBLOCK_SIZE) < P) && ((r + wm*RBLOCK_SIZE) < N)){
-                        B_local[row + wm*RBLOCK_SIZE][col + wn*RBLOCK_SIZE] = B[(r + wm*RBLOCK_SIZE)*P + (p + wn*RBLOCK_SIZE)];
-                    } else {
-                        B_local[row + wm*RBLOCK_SIZE][col + wn*RBLOCK_SIZE] = 0.0;
-                    }
-                }
-            }
-            barrier(CLK_LOCAL_MEM_FENCE);
-            #pragma unroll BLOCK_SIZE
-            for (int k=0; k<BLOCK_SIZE; k++){
-                for (int wn=0; wn<WPT; wn++){
-                    Breg[wn] = B_local[k][col + wn*RBLOCK_SIZE];
-                }
-                for (int wm=0; wm<WPT; wm++){
-                    Areg = A_local[row + wm*RBLOCK_SIZE][k];
-                    for (int wn=0; wn<WPT; wn++){
-                        acc[wm][wn] += Areg * Breg[wn];
-                    }
-                }
-            }
-            barrier(CLK_LOCAL_MEM_FENCE);
-        }
         for (int wm=0; wm<WPT; wm++){
             for (int wn=0; wn<WPT; wn++){
                 if(((m + wm*RBLOCK_SIZE) < M) && ((p + wn*RBLOCK_SIZE) < P)){
-                    if(((m + wm*RBLOCK_SIZE) < M) && ((p + wn*RBLOCK_SIZE) < P)){
-                        C[(m + wm*RBLOCK_SIZE)*P + (p + wn*RBLOCK_SIZE)] = acc[wm][wn];
                         if(activation == 1){
                           C[(m + wm*RBLOCK_SIZE) * P + (p + wn*RBLOCK_SIZE)] = RELU( C[(m + wm*RBLOCK_SIZE) * P + (p + wn*RBLOCK_SIZE)] + bias[(p + wn*RBLOCK_SIZE)] );
                         } else if(activation == 2){
@@ -159,10 +141,7 @@ __kernel void linear(
                         } else {
                           C[(m + wm*RBLOCK_SIZE) * P + (p + wn*RBLOCK_SIZE)] += bias[(p + wn*RBLOCK_SIZE)];
                         }
-                    }
-
                 }
-
             }
         }
 }

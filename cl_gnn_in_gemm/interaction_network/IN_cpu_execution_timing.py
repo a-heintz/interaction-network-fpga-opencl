@@ -15,8 +15,8 @@ import time
 import h5py
 
 prep, pt_cut = 'LP', 5
-graph_dir = "../IN_{0}_{1}/".format(prep, pt_cut)
-model_path = './trained_models/LP_2_1500_wide_noPhi_epoch300.pt'
+graph_dir = "/tigress/aheintz/IN_{0}_{1}/".format(prep, pt_cut)
+model_path = '/tigress/aheintz/data/trained_models/LP_5_500_wide_noPhi_epoch0.pt'
 data_path = '../data'
 
 graphs = get_graphs(graph_dir)
@@ -35,8 +35,11 @@ pred = interaction_network(objects, sender_relations, receiver_relations, relati
 end = time.time()
 pytorch_pred = torch.cat(pred, dim=0)
 target = torch.cat(y, dim=0)
+
 print(pytorch_pred.shape, target.shape)
 print(end - start, ' seconds')
+for i in range(pytorch_pred.shape[0]):
+    print(pytorch_pred[i])
 
 
 # In[ ]:

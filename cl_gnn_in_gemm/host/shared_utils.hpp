@@ -11,4 +11,4 @@ static cl_command_queue queue2 = NULL;
 map<string, cl_kernel> kernels;
 static cl_program program = NULL;
 int BLOCK_SIZE = 32;
-int WPT = 8;
+int WPT = 4;
