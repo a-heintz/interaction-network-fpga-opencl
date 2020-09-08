@@ -120,7 +120,7 @@ for epoch in range(n_epoch):
     start_time = time.time()
     epoch_loss = 0.0
     batch_losses = []
-    for b in range(n_batch):
+    for b in tqdm.tqdm(range(n_batch)):
         rand_idx = [random.randint(0, train_size)
                     for _ in range(batch_size)]
         batch = get_graphs(graph_dir, rand_idx)
@@ -140,7 +140,7 @@ for epoch in range(n_epoch):
     # test
     interaction_network.eval()
     test_loss = 0
-    for b in range(test_batch):
+    for b in tqdm.tqdm(range(test_batch)):
         rand_idx = [random.randint(train_size, train_size + test_size - 1)
                     for _ in range(batch_size)]
         batch = get_graphs(graph_dir, rand_idx)

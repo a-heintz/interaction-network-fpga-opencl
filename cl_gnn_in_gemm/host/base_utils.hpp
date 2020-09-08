@@ -16,7 +16,28 @@
 using namespace std;
 using namespace std::chrono;
 
-#define dtype float
+/* char emulator
+Time taken by device (avg): Total -- (per event) == 312566 microsecs
+Time taken by device (var): Total -- (per event) == 5.5345e+10 microsecs
+Time taken by device (avg): FPGA  -- (per event) == 307007 microsecs
+Time taken by device (var): FPGA  -- (per event) == 5.5166e+10 microsecs
+*/
+
+/* half emulator
+Time taken by device (avg): Total -- (per event) == 312566 microsecs
+Time taken by device (var): Total -- (per event) == 5.5345e+10 microsecs
+Time taken by device (avg): FPGA  -- (per event) == 307007 microsecs
+Time taken by device (var): FPGA  -- (per event) == 5.5166e+10 microsecs
+*/
+
+/* float emulator
+Time taken by device (avg): Total -- (per event) == 316233 microsecs
+Time taken by device (var): Total -- (per event) == 5.66119e+10 microsecs
+Time taken by device (avg): FPGA  -- (per event) == 310141 microsecs
+Time taken by device (var): FPGA  -- (per event) == 5.62709e+10 microsecs
+*/
+
+#define dtype char
 
 char* MODEL_FILE;
 char* DATA_FILE;
@@ -87,9 +108,9 @@ int OM_w0 = OM_WEIGHT_0_VEC[0].size();
 int OM_w2 = OM_WEIGHT_2_VEC[0].size();
 int OM_w4 = OM_WEIGHT_4_VEC[0].size();
 
-int data_len = 100;
-int data_idx_m[1000];
-int data_idx_n[1000];
+int data_len;
+int data_idx_m[1];
+int data_idx_n[1];
 
 cl_mem BUF_obj_arr;
 cl_mem BUF_obj_arr_t;
@@ -208,36 +229,35 @@ void load_model() {
 	flatten1dvec2array(OM_BIAS_4_VEC, OM_BIAS_4);
 }
 // THIS IS WHERE I WANT TO CAST float to dtype
-vector<vector<vector<dtype>>> load_data(hid_t data_file, string sec, int data_len)
+vector<vector<dtype>> load_data(hid_t data_file, string sec, int data_len)
 {
-		const hid_t id0 = H5Dopen2(data_file, (sec + "shape_0_i").c_str(), H5P_DEFAULT);
+    //cout << "hi 1 \n \n";
+		const hid_t id0 = H5Dopen2(data_file, (sec + "_shape_0").c_str(), H5P_DEFAULT);
 		H5Dread(id0, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, data_idx_m);
 		H5Dclose(id0);
-
-		const hid_t id1 = H5Dopen2(data_file, (sec + "shape_1_i").c_str(), H5P_DEFAULT);
+    //cout << "hi 2 \n \n";
+		const hid_t id1 = H5Dopen2(data_file, (sec + "_shape_1").c_str(), H5P_DEFAULT);
 		H5Dread(id1, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, data_idx_n);
 		H5Dclose(id1);
-
-		vector<vector<vector<dtype>>> dat;
-		dat.resize(data_len);
-		for(int i = 0; i < data_len; i++){
-			int m = data_idx_m[i];
-			int n = data_idx_n[i];
-			dat[i].resize(m);
-
-			float dat_temp[m][n];
-			string text = sec + toString(i);
-			const hid_t id = H5Dopen2(data_file, text.c_str(), H5P_DEFAULT);
-			H5Dread(id, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, dat_temp);
-			H5Dclose(id);
-
-			for(int j = 0; j < m; j++){
-				dat[i][j].resize(n);
-				for(int k = 0; k < n; k++){
-					dat[i][j][k] = dat_temp[j][k];
-				}
+    //cout << "hi 3 \n \n";
+		vector<vector<dtype>> dat;
+		int m = data_idx_m[0];
+		int n = data_idx_n[0];
+		dat.resize(m);
+    //cout << "hi 4 \n \n";
+		float dat_temp[m][n];
+		string text = sec;
+		const hid_t id = H5Dopen2(data_file, text.c_str(), H5P_DEFAULT);
+		H5Dread(id, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, dat_temp);
+		H5Dclose(id);
+    //cout << "hi 5 \n \n";
+		for(int j = 0; j < m; j++){
+			dat[j].resize(n);
+			for(int k = 0; k < n; k++){
+				dat[j][k] = dat_temp[j][k];
 			}
 		}
+    //cout << "hi 6 \n \n";
 		return dat;
 }
 

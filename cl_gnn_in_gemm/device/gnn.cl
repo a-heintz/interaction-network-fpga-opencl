@@ -1,6 +1,6 @@
 
 #pragma OPENCL EXTENSION cl_khr_fp16 : enable
-#define dtype float
+#define dtype char
 
 #define SIGMOID(inp) (1.0f / (1 + half_exp(-inp)))
 #define RELU(inp) (inp > 0 ? inp : 0)
@@ -19,8 +19,8 @@ void GEMM_helper(
       __const int M_,
       __const int N_,
       __const int P_,
-      __local float* restrict A_local,
-      __local float* restrict B_local)
+      __local dtype* restrict A_local,
+      __local dtype* restrict B_local)
 {
 
     const int row = get_local_id(0);
@@ -28,9 +28,9 @@ void GEMM_helper(
     const int m = BLOCK_SIZE*get_group_id(0) + row;
     const int p = BLOCK_SIZE*get_group_id(1) + col;
 
-    float Areg;
-    float Breg[WPT];
-    float acc[WPT][WPT];
+    dtype Areg;
+    dtype Breg[WPT];
+    dtype acc[WPT][WPT];
     #pragma unroll WPT
     for(int wm=0; wm<WPT; wm++){
         #pragma unroll WPT
@@ -102,8 +102,8 @@ void GEMM(
       __const int N_,
       __const int P_)
 {
-    __local float A_local[BLOCK_SIZE*BLOCK_SIZE];
-    __local float B_local[BLOCK_SIZE*BLOCK_SIZE];
+    __local dtype A_local[BLOCK_SIZE*BLOCK_SIZE];
+    __local dtype B_local[BLOCK_SIZE*BLOCK_SIZE];
     GEMM_helper(A, B, C, M, N, P, M_, N_, P_, A_local, B_local);
 }
 
@@ -122,8 +122,8 @@ __kernel void linear(
       __const int P_,
       __const int activation){
 
-        __local float A_local[BLOCK_SIZE*BLOCK_SIZE];
-        __local float B_local[BLOCK_SIZE*BLOCK_SIZE];
+        __local dtype A_local[BLOCK_SIZE*BLOCK_SIZE];
+        __local dtype B_local[BLOCK_SIZE*BLOCK_SIZE];
         GEMM_helper(A, B, C, M, N, P, M_, N_, P_, A_local, B_local);
 
         const int row = get_local_id(0);
