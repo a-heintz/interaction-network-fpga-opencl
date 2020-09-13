@@ -4,7 +4,7 @@ This repository is an exploratory implementation of an Interaction Network for p
 
 The network is described in the following repository: https://github.com/savvy379/princeton_gnn_tracking
 
-Before running the implementation code on the FPGA, the input data for the neural network needs to be converted into the HDF5 format. The process_data.py file inside the "interaction_network" folder does this. The following runs the format conversion for a 5 GeV Pt cut data set from inside the "interaction_network" folder:
+Before running the implementation code on the FPGA, the input data for the neural network needs to be converted into the HDF5 format. The process_data.py file inside the "interaction_network" folder does this. As an example, the following runs the format conversion for a 5 GeV Pt cut data set from inside the "interaction_network" folder:
 ```
 python process_data.py ./configs/train_IN_LP_5.yaml
 ```
