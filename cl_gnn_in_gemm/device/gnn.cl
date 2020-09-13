@@ -6,7 +6,7 @@
 #define RELU(inp) (inp > 0 ? inp : 0)
 #define global_idx(x_idx, y_idx, m) (x_idx * m + y_idx)
 #define BLOCK_SIZE 32
-#define WPT 4
+#define WPT 2
 #define RBLOCK_SIZE (BLOCK_SIZE/WPT)
 
 void GEMM_helper(

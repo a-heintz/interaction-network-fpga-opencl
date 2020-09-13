@@ -16,27 +16,6 @@
 using namespace std;
 using namespace std::chrono;
 
-/* char emulator
-Time taken by device (avg): Total -- (per event) == 312566 microsecs
-Time taken by device (var): Total -- (per event) == 5.5345e+10 microsecs
-Time taken by device (avg): FPGA  -- (per event) == 307007 microsecs
-Time taken by device (var): FPGA  -- (per event) == 5.5166e+10 microsecs
-*/
-
-/* half emulator
-Time taken by device (avg): Total -- (per event) == 312566 microsecs
-Time taken by device (var): Total -- (per event) == 5.5345e+10 microsecs
-Time taken by device (avg): FPGA  -- (per event) == 307007 microsecs
-Time taken by device (var): FPGA  -- (per event) == 5.5166e+10 microsecs
-*/
-
-/* float emulator
-Time taken by device (avg): Total -- (per event) == 316233 microsecs
-Time taken by device (var): Total -- (per event) == 5.66119e+10 microsecs
-Time taken by device (avg): FPGA  -- (per event) == 310141 microsecs
-Time taken by device (var): FPGA  -- (per event) == 5.62709e+10 microsecs
-*/
-
 #define dtype char
 
 char* MODEL_FILE;
