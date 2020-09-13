@@ -8,7 +8,7 @@ Before running the implementation code on the FPGA, the input data for the neura
 ```
 python process_data.py ./configs/train_IN_LP_5.yaml
 ```
-Data paths need to be re-set inside each config file in the "configs" folder. Additionally, several slurm scripts contain procedures for training the IN and re-formatting data through the slurm workload manager.
+Data paths need to be re-set inside each config file in the "configs" folder. Additionally, several slurm scripts contain procedures for training the IN and re-formatting data through the slurm workload manager. For more information on training the IN, refer to the network's base repository given above.
 
 Several bash scripts are provided to easily set up the necessary environment and compile the code on the FPGAs. The only change that needs to be made is to re-set data and local path locations inside each script.
 
