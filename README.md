@@ -1,4 +1,4 @@
-# interaction_network_fpga_opencl
+# Deploying an Interaction Network for Particle Track Reconstruction on FPGAs using OpenCL 
 
 This repository is an exploratory implementation of an Interaction Network (IN) for particle track reconstruction on FPGAs using OpenCL.
 
