@@ -14,8 +14,6 @@ module load anaconda3
 conda activate gnnenv
 
 cd /home/aheintz/cl_gnn_in_gemm/interaction_network
-python train_IN_large.py ./configs/train_IN_LP_0pt5.yaml
-python train_IN_large.py ./configs/train_IN_LP_0pt75.yaml
+python train_IN_large.py ./configs/train_IN_LP_2.yaml
 
-python process_data.py ./configs/train_IN_LP_0pt5.yaml
-python process_data.py ./configs/train_IN_LP_0pt75.yaml
+python process_data.py ./configs/train_IN_LP_2.yaml

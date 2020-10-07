@@ -16,7 +16,7 @@
 using namespace std;
 using namespace std::chrono;
 
-#define dtype char
+#define dtype cl_half
 
 char* MODEL_FILE;
 char* DATA_FILE;
@@ -88,6 +88,7 @@ int OM_w2 = OM_WEIGHT_2_VEC[0].size();
 int OM_w4 = OM_WEIGHT_4_VEC[0].size();
 
 int data_len;
+int print_bool;
 int data_idx_m[1];
 int data_idx_n[1];
 
@@ -239,67 +240,3 @@ vector<vector<dtype>> load_data(hid_t data_file, string sec, int data_len)
     //cout << "hi 6 \n \n";
 		return dat;
 }
-
-
-
-
-
-/* half data type
-transpose: OpenCl Execution time is: 117.929 microseconds
-buf_fastMatMul: OpenCl Execution time is: 126.003 microseconds
-buf_fastMatMul: OpenCl Execution time is: 138.79 microseconds
-interaction_cat: OpenCl Execution time is: 115.233 microseconds
-transpose: OpenCl Execution time is: 119.818 microseconds
-linear: OpenCl Execution time is: 115.347 microseconds
-linear: OpenCl Execution time is: 237.285 microseconds
-linear: OpenCl Execution time is: 221.846 microseconds
-linear: OpenCl Execution time is: 119.779 microseconds
-buf_fastMatMul: OpenCl Execution time is: 115.032 microseconds
-transpose: OpenCl Execution time is: 115.482 microseconds
-aggregate_cat: OpenCl Execution time is: 115.007 microseconds
-transpose: OpenCl Execution time is: 133.232 microseconds
-linear: OpenCl Execution time is: 221.794 microseconds
-linear: OpenCl Execution time is: 222.134 microseconds
-linear: OpenCl Execution time is: 114.957 microseconds
-transpose: OpenCl Execution time is: 114.983 microseconds
-buf_fastMatMul: OpenCl Execution time is: 134.073 microseconds
-buf_fastMatMul: OpenCl Execution time is: 98.183 microseconds
-interaction_cat: OpenCl Execution time is: 64.134 microseconds
-transpose: OpenCl Execution time is: 64.492 microseconds
-linear: OpenCl Execution time is: 171.289 microseconds
-linear: OpenCl Execution time is: 180.391 microseconds
-linear: OpenCl Execution time is: 168.435 microseconds
-linear: OpenCl Execution time is: 138.04 microseconds
-Time taken by function SWI: 12190 microsecs
-kernelL 3483.688 microsecs
-*/
-
-/* float data type
-transpose: OpenCl Execution time is: 122.484 microseconds
-buf_fastMatMul: OpenCl Execution time is: 125.318 microseconds
-buf_fastMatMul: OpenCl Execution time is: 113.989 microseconds
-interaction_cat: OpenCl Execution time is: 76.097 microseconds
-transpose: OpenCl Execution time is: 115.332 microseconds
-linear: OpenCl Execution time is: 114.392 microseconds
-linear: OpenCl Execution time is: 230.642 microseconds
-linear: OpenCl Execution time is: 221.25 microseconds
-linear: OpenCl Execution time is: 134.062 microseconds
-buf_fastMatMul: OpenCl Execution time is: 126.51 microseconds
-transpose: OpenCl Execution time is: 124.887 microseconds
-aggregate_cat: OpenCl Execution time is: 115.148 microseconds
-transpose: OpenCl Execution time is: 115.037 microseconds
-linear: OpenCl Execution time is: 115.238 microseconds
-linear: OpenCl Execution time is: 140.317 microseconds
-linear: OpenCl Execution time is: 115.136 microseconds
-transpose: OpenCl Execution time is: 117.358 microseconds
-buf_fastMatMul: OpenCl Execution time is: 80.76 microseconds
-buf_fastMatMul: OpenCl Execution time is: 62.413 microseconds
-interaction_cat: OpenCl Execution time is: 63.281 microseconds
-transpose: OpenCl Execution time is: 63.317 microseconds
-linear: OpenCl Execution time is: 170.823 microseconds
-linear: OpenCl Execution time is: 180.1 microseconds
-linear: OpenCl Execution time is: 179.478 microseconds
-linear: OpenCl Execution time is: 138.337 microseconds
-Time taken by function SWI: 13251 microsecs
-kernel: 3161.706 microsecs
-*/

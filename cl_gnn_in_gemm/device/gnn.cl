@@ -1,6 +1,6 @@
 
 #pragma OPENCL EXTENSION cl_khr_fp16 : enable
-#define dtype char
+#define dtype half
 
 #define SIGMOID(inp) (1.0f / (1 + half_exp(-inp)))
 #define RELU(inp) (inp > 0 ? inp : 0)

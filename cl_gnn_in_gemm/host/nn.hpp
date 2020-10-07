@@ -10,7 +10,6 @@
 #include "base_utils.hpp"
 #include "shared_utils.hpp"
 #include "cl_nn.hpp"
-//#include "nn_utils.hpp"
 
 using namespace std;
 using namespace std::chrono;
@@ -215,8 +214,10 @@ vector<vector<dtype>> ndr_forward(vector<vector<dtype>> obj,
 	predict = array2_2dvec(pred_arr, out_w, out_h);
 	int m = predict.size();
 	//predicted.push_back(predict);
-	//for (int j = 0; j < m; j++) {
-	//	cout << predict[j][0] << " \n";
+	//if(print_bool == 1){
+	for (int j = 0; j < out_w*out_h; j++) {
+		cout << pred_arr[j] << " \n";
+	}
 	//}
 	*elapsed_time /= 1000.0;
 	return predict;
