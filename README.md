@@ -4,7 +4,7 @@ Associated Publication:
 
 Heintz, A., Razavimaleki, V., Duarte, J., DeZoort, G., Ojalvo, I., Thais, S., Atkinson, M., Neubauer, M., Gray, L., Jindariani, S., Tran, N., Harris, P., Rankin, D., Aarrestad, T., Loncar, V., Pierini, M., Summers, S., Ngadiuba, J., Liu, M., Kreinar, E., Wu, Z., “Accelerated Charged Particle Tracking with Graph Neural Networks on FPGAs,” at Machine Learning and the Physical Sciences Workshop at the 34th Conference on Neural Information Processing Systems (NeurIPS), Dec. 11 2020.
 
-
+===============================================================
 
 This repository is an exploratory implementation of an Interaction Network (IN) for particle track reconstruction on FPGAs using OpenCL.
 
